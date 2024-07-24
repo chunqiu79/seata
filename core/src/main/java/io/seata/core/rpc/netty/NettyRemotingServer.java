@@ -56,6 +56,7 @@ public class NettyRemotingServer extends AbstractNettyRemotingServer {
     @Override
     public void init() {
         // registry processor
+        // 注册处理器
         registerProcessor();
         if (initialized.compareAndSet(false, true)) {
             super.init();
@@ -95,6 +96,7 @@ public class NettyRemotingServer extends AbstractNettyRemotingServer {
 
     private void registerProcessor() {
         // 1. registry on request message processor
+        // 注册 请求消息处理器
         ServerOnRequestProcessor onRequestProcessor =
             new ServerOnRequestProcessor(this, getHandler());
         ShutdownHook.getInstance().addDisposable(onRequestProcessor);
@@ -108,17 +110,21 @@ public class NettyRemotingServer extends AbstractNettyRemotingServer {
         super.registerProcessor(MessageType.TYPE_GLOBAL_STATUS, onRequestProcessor, messageExecutor);
         super.registerProcessor(MessageType.TYPE_SEATA_MERGE, onRequestProcessor, messageExecutor);
         // 2. registry on response message processor
+        // 注册 响应消息处理器
         ServerOnResponseProcessor onResponseProcessor =
             new ServerOnResponseProcessor(getHandler(), getFutures());
         super.registerProcessor(MessageType.TYPE_BRANCH_COMMIT_RESULT, onResponseProcessor, branchResultMessageExecutor);
         super.registerProcessor(MessageType.TYPE_BRANCH_ROLLBACK_RESULT, onResponseProcessor, branchResultMessageExecutor);
         // 3. registry rm message processor
+        // 注册 rm注册处理器
         RegRmProcessor regRmProcessor = new RegRmProcessor(this);
         super.registerProcessor(MessageType.TYPE_REG_RM, regRmProcessor, messageExecutor);
         // 4. registry tm message processor
+        // 注册 tm注册处理器
         RegTmProcessor regTmProcessor = new RegTmProcessor(this);
         super.registerProcessor(MessageType.TYPE_REG_CLT, regTmProcessor, null);
         // 5. registry heartbeat message processor
+        // 注册 心跳消息处理器
         ServerHeartbeatProcessor heartbeatMessageProcessor = new ServerHeartbeatProcessor(this);
         super.registerProcessor(MessageType.TYPE_HEARTBEAT_MSG, heartbeatMessageProcessor, null);
     }

@@ -344,6 +344,7 @@ public interface ConfigurationKeys {
 
     /**
      * The constant SERVER_RPC_PORT.
+     * 服务端端口号
      */
     String SERVER_SERVICE_PORT_CAMEL = SERVER_PREFIX + "servicePort";
 

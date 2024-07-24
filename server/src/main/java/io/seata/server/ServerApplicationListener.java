@@ -15,7 +15,6 @@
  */
 package io.seata.server;
 
-import java.util.Properties;
 import io.seata.common.holder.ObjectHolder;
 import io.seata.common.util.StringUtils;
 import io.seata.config.Configuration;
@@ -30,9 +29,9 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.PropertiesPropertySource;
 
-import static io.seata.common.ConfigurationKeys.STORE_LOCK_MODE;
-import static io.seata.common.ConfigurationKeys.STORE_MODE;
-import static io.seata.common.ConfigurationKeys.STORE_SESSION_MODE;
+import java.util.Properties;
+
+import static io.seata.common.ConfigurationKeys.*;
 import static io.seata.common.Constants.OBJECT_KEY_SPRING_CONFIGURABLE_ENVIRONMENT;
 import static io.seata.common.DefaultValues.SERVICE_OFFSET_SPRING_BOOT;
 import static io.seata.core.constants.ConfigurationKeys.ENV_SEATA_PORT_KEY;
@@ -83,6 +82,7 @@ public class ServerApplicationListener implements GenericApplicationListener {
         }
 
         // -Dserver.servicePort=8091
+        // 优先读取 server.servicePort配置的端口号
         String dPort = environment.getProperty(SERVER_SERVICE_PORT_CAMEL, String.class);
         if (StringUtils.isNotBlank(dPort)) {
             setTargetPort(environment, dPort, true);
@@ -108,6 +108,7 @@ public class ServerApplicationListener implements GenericApplicationListener {
         if (StringUtils.isBlank(serverPort)) {
             serverPort = "8080";
         }
+        // 这里设置端口号为8091 (server.port + 1000)
         String servicePort = String.valueOf(Integer.parseInt(serverPort) + SERVICE_OFFSET_SPRING_BOOT);
         setTargetPort(environment, servicePort, true);
     }

@@ -42,7 +42,7 @@ seata:
       server-addr: 127.0.0.1:8848
       group: SEATA_GROUP
       namespace: dev
-      cluster: default
+      cluster: blog-study-seata-cluster
       username: nacos
       password: nacos
   # 存储

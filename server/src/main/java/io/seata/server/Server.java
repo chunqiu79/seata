@@ -15,10 +15,6 @@
  */
 package io.seata.server;
 
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
 import io.seata.common.XID;
 import io.seata.common.thread.NamedThreadFactory;
 import io.seata.common.util.NetUtil;
@@ -33,6 +29,10 @@ import io.seata.server.metrics.MetricsManager;
 import io.seata.server.session.SessionHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static io.seata.spring.boot.autoconfigure.StarterConstants.REGEX_SPLIT_CHAR;
 import static io.seata.spring.boot.autoconfigure.StarterConstants.REGISTRY_PREFERED_NETWORKS;
@@ -60,16 +60,19 @@ public class Server {
         //initialize the metrics
         MetricsManager.get().init();
 
+        // 设置 store.mode 存储方式
         System.setProperty(ConfigurationKeys.STORE_MODE, parameterParser.getStoreMode());
 
         ThreadPoolExecutor workingThreads = new ThreadPoolExecutor(NettyServerConfig.getMinServerPoolSize(),
                 NettyServerConfig.getMaxServerPoolSize(), NettyServerConfig.getKeepAliveTime(), TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(NettyServerConfig.getMaxTaskQueueSize()),
                 new NamedThreadFactory("ServerHandlerThread", NettyServerConfig.getMaxServerPoolSize()), new ThreadPoolExecutor.CallerRunsPolicy());
-
+        // 创建 netty远程服务，内部会将 ServerHandler 添加到处理器中
         NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads);
         UUIDGenerator.init(parameterParser.getServerNode());
         //log store mode : file, db, redis
+        // 事务信息存储 初始化
+        // 这里耗时还挺久的
         SessionHolder.init(parameterParser.getSessionStoreMode());
         LockerManagerFactory.init(parameterParser.getLockStoreMode());
         DefaultCoordinator coordinator = DefaultCoordinator.getInstance(nettyRemotingServer);
@@ -87,6 +90,7 @@ public class Server {
             if (StringUtils.isNotBlank(preferredNetworks)) {
                 XID.setIpAddress(NetUtil.getLocalIp(preferredNetworks.split(REGEX_SPLIT_CHAR)));
             } else {
+                // 设置ip地址
                 XID.setIpAddress(NetUtil.getLocalIp());
             }
         }

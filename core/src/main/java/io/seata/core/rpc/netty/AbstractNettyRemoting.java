@@ -105,6 +105,7 @@ public abstract class AbstractNettyRemoting implements Disposable {
     protected final List<RpcHook> rpcHooks = EnhancedServiceLoader.loadAll(RpcHook.class);
 
     public void init() {
+        // 3秒之后执行，每次执行间隔3秒
         timerExecutor.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {

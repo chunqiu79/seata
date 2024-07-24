@@ -15,15 +15,7 @@
  */
 package io.seata.core.rpc.netty;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeoutException;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.*;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -37,6 +29,10 @@ import io.seata.core.rpc.processor.Pair;
 import io.seata.core.rpc.processor.RemotingProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeoutException;
 
 /**
  * The type abstract remoting server.
@@ -53,12 +49,14 @@ public abstract class AbstractNettyRemotingServer extends AbstractNettyRemoting 
     @Override
     public void init() {
         super.init();
+        // 服务引导器 开始
         serverBootstrap.start();
     }
 
     public AbstractNettyRemotingServer(ThreadPoolExecutor messageExecutor, NettyServerConfig nettyServerConfig) {
         super(messageExecutor);
         serverBootstrap = new NettyServerBootstrap(nettyServerConfig);
+        // 将 ServerHandler 添加到 服务引导器的处理器中
         serverBootstrap.setChannelHandlers(new ServerHandler());
     }
 
@@ -109,6 +107,8 @@ public abstract class AbstractNettyRemotingServer extends AbstractNettyRemoting 
     @Override
     public void registerProcessor(int messageType, RemotingProcessor processor, ExecutorService executor) {
         Pair<RemotingProcessor, ExecutorService> pair = new Pair<>(processor, executor);
+        // 这里其实就是相当于 map
+        // key - 数字，用来标识消息类型    value - 处理器&线程池
         this.processorTable.put(messageType, pair);
     }
 
@@ -149,6 +149,7 @@ public abstract class AbstractNettyRemotingServer extends AbstractNettyRemoting 
 
     /**
      * The type ServerHandler.
+     * 服务端 处理器
      */
     @ChannelHandler.Sharable
     class ServerHandler extends ChannelDuplexHandler {
