@@ -15,12 +15,6 @@
  */
 package io.seata.core.rpc.netty;
 
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
-
 import io.netty.channel.Channel;
 import io.netty.util.concurrent.EventExecutorGroup;
 import io.seata.common.DefaultValues;
@@ -45,10 +39,13 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.seata.core.constants.ConfigurationKeys.EXTRA_DATA_KV_CHAR;
-import static io.seata.core.constants.ConfigurationKeys.EXTRA_DATA_SPLIT_CHAR;
-import static io.seata.core.constants.ConfigurationKeys.SEATA_ACCESS_KEY;
-import static io.seata.core.constants.ConfigurationKeys.SEATA_SECRET_KEY;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+
+import static io.seata.core.constants.ConfigurationKeys.*;
 
 /**
  * The rm netty client.
@@ -194,6 +191,7 @@ public final class TmNettyRemotingClient extends AbstractNettyRemotingClient {
         registerProcessor();
         if (initialized.compareAndSet(false, true)) {
             super.init();
+            // 配置了 seata.tx-service-group
             if (io.seata.common.util.StringUtils.isNotBlank(transactionServiceGroup)) {
                 getClientChannelManager().reconnect(transactionServiceGroup);
             }
@@ -253,6 +251,7 @@ public final class TmNettyRemotingClient extends AbstractNettyRemotingClient {
 
     private void registerProcessor() {
         // 1.registry TC response processor
+        // 注册 tc响应处理器
         ClientOnResponseProcessor onResponseProcessor =
                 new ClientOnResponseProcessor(mergeMsgMap, super.getFutures(), getTransactionMessageHandler());
         super.registerProcessor(MessageType.TYPE_SEATA_MERGE_RESULT, onResponseProcessor, null);

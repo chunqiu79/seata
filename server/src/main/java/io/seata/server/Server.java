@@ -67,7 +67,8 @@ public class Server {
                 NettyServerConfig.getMaxServerPoolSize(), NettyServerConfig.getKeepAliveTime(), TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(NettyServerConfig.getMaxTaskQueueSize()),
                 new NamedThreadFactory("ServerHandlerThread", NettyServerConfig.getMaxServerPoolSize()), new ThreadPoolExecutor.CallerRunsPolicy());
-        // 创建 netty远程服务，内部会将 ServerHandler 添加到处理器中
+        // 创建 netty远程服务端，用于和客户端通信（tm、rm）
+        // 内部会将 ServerHandler 添加到处理器中
         NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads);
         UUIDGenerator.init(parameterParser.getServerNode());
         //log store mode : file, db, redis

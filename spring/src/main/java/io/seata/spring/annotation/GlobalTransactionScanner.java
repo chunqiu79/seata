@@ -15,16 +15,6 @@
  */
 package io.seata.spring.annotation;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.annotation.Nullable;
-
 import io.seata.common.util.CollectionUtils;
 import io.seata.common.util.StringUtils;
 import io.seata.config.ConfigurationCache;
@@ -64,9 +54,12 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 
-import static io.seata.common.DefaultValues.DEFAULT_DISABLE_GLOBAL_TRANSACTION;
-import static io.seata.common.DefaultValues.DEFAULT_TX_GROUP;
-import static io.seata.common.DefaultValues.DEFAULT_TX_GROUP_OLD;
+import javax.annotation.Nullable;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static io.seata.common.DefaultValues.*;
 
 /**
  * The type Global transaction scanner.
@@ -217,11 +210,13 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
             throw new IllegalArgumentException(String.format("applicationId: %s, txServiceGroup: %s", applicationId, txServiceGroup));
         }
         //init TM
+        // 初始化 tm客户端
         TMClient.init(applicationId, txServiceGroup, accessKey, secretKey);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Transaction Manager Client is initialized. applicationId[{}] txServiceGroup[{}]", applicationId, txServiceGroup);
         }
         //init RM
+        // 初始化 rm客户端（内部和tm差不多）
         RMClient.init(applicationId, txServiceGroup);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Resource Manager is initialized. applicationId[{}] txServiceGroup[{}]", applicationId, txServiceGroup);
@@ -498,6 +493,9 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
         return new Object[]{interceptor};
     }
 
+    /**
+     * 初始化
+     */
     @Override
     public void afterPropertiesSet() {
         if (disableGlobalTransaction) {
@@ -509,6 +507,7 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
             return;
         }
         if (initialized.compareAndSet(false, true)) {
+            // 初始化客户端
             initClient();
         }
     }

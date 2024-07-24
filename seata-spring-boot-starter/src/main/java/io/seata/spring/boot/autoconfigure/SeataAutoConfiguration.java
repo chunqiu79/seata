@@ -15,8 +15,6 @@
  */
 package io.seata.spring.boot.autoconfigure;
 
-import java.util.List;
-
 import io.seata.common.loader.EnhancedServiceLoader;
 import io.seata.spring.annotation.GlobalTransactionScanner;
 import io.seata.spring.annotation.ScannerChecker;
@@ -33,14 +31,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.DependsOn;
 
+import java.util.List;
+
 import static io.seata.common.Constants.BEAN_NAME_FAILURE_HANDLER;
 import static io.seata.common.Constants.BEAN_NAME_SPRING_APPLICATION_CONTEXT_PROVIDER;
 import static io.seata.spring.boot.autoconfigure.StarterConstants.SEATA_PREFIX;
 
 /**
- * The type Seata auto configuration
- *
- * @author xingfudeshi@gmail.com
+ * seata 自动配置类
  */
 @ConditionalOnProperty(prefix = SEATA_PREFIX, name = "enabled", havingValue = "true", matchIfMissing = true)
 @AutoConfigureAfter({SeataCoreAutoConfiguration.class})
