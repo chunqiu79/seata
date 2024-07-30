@@ -56,7 +56,7 @@ public class NettyRemotingServer extends AbstractNettyRemotingServer {
     @Override
     public void init() {
         // registry processor
-        // 注册处理器
+        // 注册 处理器
         registerProcessor();
         if (initialized.compareAndSet(false, true)) {
             super.init();

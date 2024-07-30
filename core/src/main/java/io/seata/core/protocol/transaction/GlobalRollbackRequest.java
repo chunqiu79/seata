@@ -19,9 +19,7 @@ import io.seata.core.protocol.MessageType;
 import io.seata.core.rpc.RpcContext;
 
 /**
- * The type Global rollback request.
- *
- * @author slievrly
+ * 全局事务回滚 请求-处理类
  */
 public class GlobalRollbackRequest extends AbstractGlobalEndRequest {
     @Override
@@ -31,6 +29,7 @@ public class GlobalRollbackRequest extends AbstractGlobalEndRequest {
 
     @Override
     public AbstractTransactionResponse handle(RpcContext rpcContext) {
+        // 全局事务回滚 处理
         return handler.handle(this, rpcContext);
     }
 }

@@ -15,17 +15,6 @@
  */
 package io.seata.server.session;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import io.seata.common.Constants;
 import io.seata.common.DefaultValues;
 import io.seata.common.XID;
@@ -46,9 +35,13 @@ import io.seata.server.store.StoreConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.seata.core.model.GlobalStatus.AsyncCommitting;
-import static io.seata.core.model.GlobalStatus.CommitRetrying;
-import static io.seata.core.model.GlobalStatus.Committing;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static io.seata.core.model.GlobalStatus.*;
 
 /**
  * The type Global session.
@@ -193,6 +186,7 @@ public class GlobalSession implements SessionLifecycle, SessionStorable {
         this.beginTime = System.currentTimeMillis();
         this.active = true;
         for (SessionLifecycleListener lifecycleListener : lifecycleListeners) {
+            // 向 global-table 插入数据，表明全局事务的开启
             lifecycleListener.onBegin(this);
         }
     }
@@ -255,6 +249,7 @@ public class GlobalSession implements SessionLifecycle, SessionStorable {
     }
 
     public void clean() throws TransactionException {
+        // 删除 lock-table 事务锁信息
         if (!LockerManagerFactory.getLockManager().releaseGlobalSessionLock(this)) {
             throw new TransactionException("UnLock globalSession error, xid = " + this.xid);
         }
@@ -268,6 +263,8 @@ public class GlobalSession implements SessionLifecycle, SessionStorable {
     public void closeAndClean() throws TransactionException {
         close();
         if (this.hasATBranch()) {
+            // AT模式的
+            // 删除 lock-table事务锁 数据
             clean();
         }
     }
@@ -382,6 +379,7 @@ public class GlobalSession implements SessionLifecycle, SessionStorable {
      * @param lazyLoadBranch          the lazy load branch
      */
     public GlobalSession(String applicationId, String transactionServiceGroup, String transactionName, int timeout, boolean lazyLoadBranch) {
+        // 雪花算法生成的id
         this.transactionId = UUIDGenerator.generateUUID();
         this.status = GlobalStatus.Begin;
         this.lazyLoadBranch = lazyLoadBranch;
@@ -392,6 +390,8 @@ public class GlobalSession implements SessionLifecycle, SessionStorable {
         this.transactionServiceGroup = transactionServiceGroup;
         this.transactionName = transactionName;
         this.timeout = timeout;
+        // 设置 全局事务id
+        // 其实就是 ip + ":" + port + ":" + 雪花算法生成的id
         this.xid = XID.generateXID(transactionId);
     }
 

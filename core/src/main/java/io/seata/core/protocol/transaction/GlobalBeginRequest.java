@@ -19,9 +19,7 @@ import io.seata.core.protocol.MessageType;
 import io.seata.core.rpc.RpcContext;
 
 /**
- * The type Global begin request.
- *
- * @author slievrly
+ * 全局事务开启 请求-处理类
  */
 public class GlobalBeginRequest extends AbstractTransactionRequestToTC {
 
@@ -73,6 +71,7 @@ public class GlobalBeginRequest extends AbstractTransactionRequestToTC {
 
     @Override
     public AbstractTransactionResponse handle(RpcContext rpcContext) {
+        // 全局事务开启 处理
         return handler.handle(this, rpcContext);
     }
 

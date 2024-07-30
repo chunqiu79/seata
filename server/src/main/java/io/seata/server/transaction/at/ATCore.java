@@ -15,9 +15,6 @@
  */
 package io.seata.server.transaction.at;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.seata.common.exception.StoreException;
 import io.seata.common.util.StringUtils;
@@ -29,6 +26,9 @@ import io.seata.server.coordinator.AbstractCore;
 import io.seata.server.session.BranchSession;
 import io.seata.server.session.GlobalSession;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static io.seata.common.Constants.AUTO_COMMIT;
 import static io.seata.common.Constants.SKIP_CHECK_LOCK;
@@ -56,6 +56,7 @@ public class ATCore extends AbstractCore {
     protected void branchSessionLock(GlobalSession globalSession, BranchSession branchSession)
         throws TransactionException {
         String applicationData = branchSession.getApplicationData();
+        // 设置为自动提交
         boolean autoCommit = true;
         boolean skipCheckLock = false;
         if (StringUtils.isNotBlank(applicationData)) {
@@ -77,6 +78,7 @@ public class ATCore extends AbstractCore {
             }
         }
         try {
+            // 只有 at模式 需要加锁（内部会 插入lock-table的记录）
             if (!branchSession.lock(autoCommit, skipCheckLock)) {
                 throw new BranchTransactionException(LockKeyConflict,
                     String.format("Global lock acquire failed xid = %s branchId = %s", globalSession.getXid(),

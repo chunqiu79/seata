@@ -15,16 +15,6 @@
  */
 package io.seata.server.storage.db.lock;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.sql.DataSource;
 import io.seata.common.exception.DataAccessException;
 import io.seata.common.exception.StoreException;
 import io.seata.common.util.CollectionUtils;
@@ -43,6 +33,16 @@ import io.seata.core.store.db.sql.lock.LockStoreSqlFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static io.seata.common.DefaultValues.DEFAULT_LOCK_DB_TABLE;
 import static io.seata.core.exception.TransactionExceptionCode.LockKeyConflictFailFast;
@@ -116,6 +116,7 @@ public class LockStoreDataBaseDAO implements LockStore {
         try {
             conn = lockStoreDataSource.getConnection();
             if (originalAutoCommit = conn.getAutoCommit()) {
+                // 禁用自动提交
                 conn.setAutoCommit(false);
             }
             List<LockDO> unrepeatedLockDOs = lockDOs;
@@ -175,6 +176,7 @@ public class LockStoreDataBaseDAO implements LockStore {
             // lock
             if (unrepeatedLockDOs.size() == 1) {
                 LockDO lockDO = unrepeatedLockDOs.get(0);
+                // lock-table 插入数据 （但是因为禁用了自动提交，所以还没有真正插入数据）
                 if (!doAcquireLock(conn, lockDO)) {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("Global lock acquire failed, xid {} branchId {} pk {}", lockDO.getXid(), lockDO.getBranchId(), lockDO.getPk());
@@ -192,6 +194,7 @@ public class LockStoreDataBaseDAO implements LockStore {
                     return false;
                 }
             }
+            // 这里提交之后 lock-table 才会真正插入数据
             conn.commit();
             return true;
         } catch (SQLException e) {
@@ -266,8 +269,10 @@ public class LockStoreDataBaseDAO implements LockStore {
         PreparedStatement ps = null;
         try {
             conn = lockStoreDataSource.getConnection();
+            // 自动提交
             conn.setAutoCommit(true);
             //batch release lock by branch list
+            // delete from lock_table where xid = ?
             String batchDeleteSQL = LockStoreSqlFactory.getLogStoreSql(dbType).getBatchDeleteLockSqlByXid(lockTable);
             ps = conn.prepareStatement(batchDeleteSQL);
             ps.setString(1, xid);
@@ -322,7 +327,7 @@ public class LockStoreDataBaseDAO implements LockStore {
     protected boolean doAcquireLock(Connection conn, LockDO lockDO) {
         PreparedStatement ps = null;
         try {
-            //insert
+            // insert into lock_table(xid, transaction_id, branch_id, resource_id, table_name, pk, row_key, gmt_create, gmt_modified,status) values (?, ?, ?, ?, ?, ?, ?, now(), now(), ?)
             String insertLockSQL = LockStoreSqlFactory.getLogStoreSql(dbType).getInsertLockSQL(lockTable);
             ps = conn.prepareStatement(insertLockSQL);
             ps.setString(1, lockDO.getXid());

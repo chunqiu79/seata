@@ -19,9 +19,7 @@ import io.seata.core.protocol.MessageType;
 import io.seata.core.rpc.RpcContext;
 
 /**
- * The type Global commit request.
- *
- * @author slievrly
+ * 全局事务提交 请求-处理类
  */
 public class GlobalCommitRequest extends AbstractGlobalEndRequest {
     @Override
@@ -31,6 +29,7 @@ public class GlobalCommitRequest extends AbstractGlobalEndRequest {
 
     @Override
     public AbstractTransactionResponse handle(RpcContext rpcContext) {
+        // 全局事务提交 处理
         return handler.handle(this, rpcContext);
     }
 }

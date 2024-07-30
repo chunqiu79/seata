@@ -16,23 +16,13 @@
 package io.seata.server.storage.db.lock;
 
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Objects;
-import javax.sql.DataSource;
 import io.seata.common.exception.ShouldNeverHappenException;
 import io.seata.common.loader.EnhancedServiceLoader;
 import io.seata.common.loader.LoadLevel;
 import io.seata.common.loader.Scope;
 import io.seata.common.util.IOUtil;
 import io.seata.common.util.StringUtils;
-import io.seata.config.Configuration;
-import io.seata.config.ConfigurationCache;
-import io.seata.config.ConfigurationChangeEvent;
-import io.seata.config.ConfigurationChangeListener;
-import io.seata.config.ConfigurationFactory;
+import io.seata.config.*;
 import io.seata.core.constants.ConfigurationKeys;
 import io.seata.core.constants.ServerTableColumnsName;
 import io.seata.core.store.DistributedLockDO;
@@ -41,6 +31,13 @@ import io.seata.core.store.db.DataSourceProvider;
 import io.seata.core.store.db.sql.distributed.lock.DistributedLockSqlFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Objects;
 
 import static io.seata.core.constants.ConfigurationKeys.DISTRIBUTED_LOCK_DB_TABLE;
 
@@ -110,10 +107,12 @@ public class DataBaseDistributedLocker implements DistributedLocker {
         try {
             connection = distributedLockDataSource.getConnection();
             originalAutoCommit = connection.getAutoCommit();
+            // 关闭自动提交
             connection.setAutoCommit(false);
 
             DistributedLockDO distributedLockDOFromDB = getDistributedLockDO(connection, distributedLockDO.getLockKey());
             if (null == distributedLockDOFromDB) {
+                // 插入 distributed-lock 数据
                 boolean ret = insertDistribute(connection, distributedLockDO);
                 connection.commit();
                 return ret;
@@ -204,6 +203,8 @@ public class DataBaseDistributedLocker implements DistributedLocker {
     }
 
     protected DistributedLockDO getDistributedLockDO(Connection connection, String key) throws SQLException {
+        // sql：select lock_key, lock_value, expire from lock_table where lock_key = ? for update
+        // 加了 for-update 排他锁
         try (PreparedStatement pst = connection.prepareStatement(DistributedLockSqlFactory.getDistributedLogStoreSql(dbType)
                 .getSelectDistributeForUpdateSql(distributedLockTable))) {
 
@@ -222,6 +223,7 @@ public class DataBaseDistributedLocker implements DistributedLocker {
     }
 
     protected boolean insertDistribute(Connection connection, DistributedLockDO distributedLockDO) throws SQLException {
+        // sql：insert into distributed_lock(lock_key, lock_value, expire) values (?, ?, ?)
         try (PreparedStatement insertPst = connection.prepareStatement(DistributedLockSqlFactory.getDistributedLogStoreSql(dbType)
                 .getInsertSql(distributedLockTable))) {
             insertPst.setString(1, distributedLockDO.getLockKey());

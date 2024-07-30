@@ -76,7 +76,9 @@ public class Server {
         // 这里耗时还挺久的
         SessionHolder.init(parameterParser.getSessionStoreMode());
         LockerManagerFactory.init(parameterParser.getLockStoreMode());
+        // DefaultCoordinator tc的核心事务逻辑处理类
         DefaultCoordinator coordinator = DefaultCoordinator.getInstance(nettyRemotingServer);
+        // 初始化 (内部会设置轮询任务)
         coordinator.init();
         nettyRemotingServer.setHandler(coordinator);
 

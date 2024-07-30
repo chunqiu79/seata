@@ -15,20 +15,16 @@
  */
 package io.seata.tm.api;
 
-import java.util.List;
-
 import io.seata.common.exception.ShouldNeverHappenException;
 import io.seata.core.context.GlobalLockConfigHolder;
 import io.seata.core.exception.TransactionException;
 import io.seata.core.model.GlobalLockConfig;
 import io.seata.core.model.GlobalStatus;
-import io.seata.tm.api.transaction.Propagation;
-import io.seata.tm.api.transaction.SuspendedResourcesHolder;
-import io.seata.tm.api.transaction.TransactionHook;
-import io.seata.tm.api.transaction.TransactionHookManager;
-import io.seata.tm.api.transaction.TransactionInfo;
+import io.seata.tm.api.transaction.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * Template of executing business logic with a global transaction.
@@ -119,6 +115,7 @@ public class TransactionalTemplate {
             try {
                 // 2. If the tx role is 'GlobalTransactionRole.Launcher', send the request of beginTransaction to TC,
                 //    else do nothing. Of course, the hooks will still be triggered.
+                // 开启全局事务
                 beginTransaction(txInfo, tx);
 
                 Object rs;

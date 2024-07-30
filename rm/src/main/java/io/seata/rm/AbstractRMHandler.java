@@ -51,6 +51,7 @@ public abstract class AbstractRMHandler extends AbstractExceptionHandler
             @Override
             public void execute(BranchCommitRequest request, BranchCommitResponse response)
                 throws TransactionException {
+                // 分支事务提交处理
                 doBranchCommit(request, response);
             }
         }, request, response);
@@ -64,6 +65,7 @@ public abstract class AbstractRMHandler extends AbstractExceptionHandler
             @Override
             public void execute(BranchRollbackRequest request, BranchRollbackResponse response)
                 throws TransactionException {
+                // 处理 分支事务回滚
                 doBranchRollback(request, response);
             }
         }, request, response);

@@ -15,9 +15,6 @@
  */
 package io.seata.server.coordinator;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 import io.seata.core.context.RootContext;
 import io.seata.core.exception.BranchTransactionException;
 import io.seata.core.exception.GlobalTransactionException;
@@ -41,12 +38,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import static io.seata.core.exception.TransactionExceptionCode.BranchTransactionNotExist;
-import static io.seata.core.exception.TransactionExceptionCode.FailedToAddBranch;
-import static io.seata.core.exception.TransactionExceptionCode.GlobalTransactionNotActive;
-import static io.seata.core.exception.TransactionExceptionCode.GlobalTransactionStatusInvalid;
-import static io.seata.core.exception.TransactionExceptionCode.FailedToSendBranchCommitRequest;
-import static io.seata.core.exception.TransactionExceptionCode.FailedToSendBranchRollbackRequest;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
+import static io.seata.core.exception.TransactionExceptionCode.*;
 
 /**
  * The type abstract core.
@@ -80,8 +75,10 @@ public abstract class AbstractCore implements Core {
             BranchSession branchSession = SessionHelper.newBranchByGlobal(globalSession, branchType, resourceId,
                     applicationData, lockKeys, clientId);
             MDC.put(RootContext.MDC_KEY_BRANCH_ID, String.valueOf(branchSession.getBranchId()));
+            // 只有 at模式 才需要加锁（内部会插入 lock-table的记录）
             branchSessionLock(globalSession, branchSession);
             try {
+                // 添加 分支事务（内部会插入 branch-table的记录）
                 globalSession.addBranch(branchSession);
             } catch (RuntimeException ex) {
                 branchSessionUnlock(branchSession);
@@ -162,6 +159,7 @@ public abstract class AbstractCore implements Core {
             request.setResourceId(branchSession.getResourceId());
             request.setApplicationData(branchSession.getApplicationData());
             request.setBranchType(branchSession.getBranchType());
+            // 需要发送请求到客户端，交给客户端进行处理
             return branchCommitSend(request, globalSession, branchSession);
         } catch (IOException | TimeoutException e) {
             throw new BranchTransactionException(FailedToSendBranchCommitRequest,

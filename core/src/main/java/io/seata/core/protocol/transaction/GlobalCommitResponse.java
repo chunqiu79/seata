@@ -18,9 +18,7 @@ package io.seata.core.protocol.transaction;
 import io.seata.core.protocol.MessageType;
 
 /**
- * The type Global commit response.
- *
- * @author slievrly
+ * 全局事务提交 响应-处理类
  */
 public class GlobalCommitResponse extends AbstractGlobalEndResponse {
 

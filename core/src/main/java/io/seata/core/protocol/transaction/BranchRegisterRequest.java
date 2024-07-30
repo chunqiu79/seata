@@ -133,6 +133,7 @@ public class BranchRegisterRequest extends AbstractTransactionRequestToTC  {
 
     @Override
     public AbstractTransactionResponse handle(RpcContext rpcContext) {
+        // 分支事务注册 处理
         return handler.handle(this, rpcContext);
     }
 

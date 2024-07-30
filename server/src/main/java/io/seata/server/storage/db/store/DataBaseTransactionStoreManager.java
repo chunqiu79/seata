@@ -15,14 +15,6 @@
  */
 package io.seata.server.storage.db.store;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import javax.sql.DataSource;
-
 import io.seata.common.exception.StoreException;
 import io.seata.common.loader.EnhancedServiceLoader;
 import io.seata.common.util.CollectionUtils;
@@ -37,10 +29,14 @@ import io.seata.core.store.LogStore;
 import io.seata.core.store.db.DataSourceProvider;
 import io.seata.server.session.GlobalSession;
 import io.seata.server.session.SessionCondition;
+import io.seata.server.storage.SessionConverter;
 import io.seata.server.store.AbstractTransactionStoreManager;
 import io.seata.server.store.SessionStorable;
 import io.seata.server.store.TransactionStoreManager;
-import io.seata.server.storage.SessionConverter;
+
+import javax.sql.DataSource;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static io.seata.core.constants.RedisKeyConstants.DEFAULT_LOG_QUERY_LIMIT;
 
@@ -97,16 +93,22 @@ public class DataBaseTransactionStoreManager extends AbstractTransactionStoreMan
     @Override
     public boolean writeSession(LogOperation logOperation, SessionStorable session) {
         if (LogOperation.GLOBAL_ADD.equals(logOperation)) {
+            // 全局事务开启   构建 global-table数据 并 插入数据库
             return logStore.insertGlobalTransactionDO(SessionConverter.convertGlobalTransactionDO(session));
         } else if (LogOperation.GLOBAL_UPDATE.equals(logOperation)) {
+            // 全局事务提交   修改 global-table 的 status
             return logStore.updateGlobalTransactionDO(SessionConverter.convertGlobalTransactionDO(session));
         } else if (LogOperation.GLOBAL_REMOVE.equals(logOperation)) {
+            // 全局事务回滚   删除 global-table数据
             return logStore.deleteGlobalTransactionDO(SessionConverter.convertGlobalTransactionDO(session));
         } else if (LogOperation.BRANCH_ADD.equals(logOperation)) {
+            // 分支事务开启   构建 branch-table数据 并 插入数据库
             return logStore.insertBranchTransactionDO(SessionConverter.convertBranchTransactionDO(session));
         } else if (LogOperation.BRANCH_UPDATE.equals(logOperation)) {
+            // 分支事务 更新
             return logStore.updateBranchTransactionDO(SessionConverter.convertBranchTransactionDO(session));
         } else if (LogOperation.BRANCH_REMOVE.equals(logOperation)) {
+            // 分支事务 删除
             return logStore.deleteBranchTransactionDO(SessionConverter.convertBranchTransactionDO(session));
         } else {
             throw new StoreException("Unknown LogOperation:" + logOperation.name());

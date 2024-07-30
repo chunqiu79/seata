@@ -15,22 +15,6 @@
  */
 package io.seata.rm.datasource;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
 import com.google.common.collect.Lists;
 import io.seata.common.thread.NamedThreadFactory;
 import io.seata.common.util.IOUtil;
@@ -41,6 +25,11 @@ import io.seata.rm.datasource.undo.UndoLogManager;
 import io.seata.rm.datasource.undo.UndoLogManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static io.seata.common.DefaultValues.DEFAULT_CLIENT_ASYNC_COMMIT_BUFFER_LIMIT;
 import static io.seata.core.constants.ConfigurationKeys.CLIENT_ASYNC_COMMIT_BUFFER_LIMIT;
@@ -144,6 +133,7 @@ public class AsyncWorker {
             LOGGER.warn("resourceId is empty and will skip.");
             return;
         }
+        // 获取 数据源代理
         DataSourceProxy dataSourceProxy = dataSourceManager.get(resourceId);
         if (dataSourceProxy == null) {
             LOGGER.warn("failed to find resource for {} and requeue", resourceId);

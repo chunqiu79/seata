@@ -15,10 +15,6 @@
  */
 package io.seata.server.coordinator;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import io.seata.common.DefaultValues;
 import io.seata.common.exception.NotSupportYetException;
 import io.seata.common.loader.EnhancedServiceLoader;
@@ -39,6 +35,10 @@ import io.seata.server.session.SessionHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static io.seata.core.constants.ConfigurationKeys.XAER_NOTA_RETRY_TIMEOUT;
 import static io.seata.server.session.BranchSessionHandler.CONTINUE;
@@ -128,6 +128,7 @@ public class DefaultCore implements Core {
     @Override
     public String begin(String applicationId, String transactionServiceGroup, String name, int timeout)
         throws TransactionException {
+        // 创建全局会话 （生成了xid）
         GlobalSession session = GlobalSession.createGlobalSession(applicationId, transactionServiceGroup, name,
             timeout);
         MDC.put(RootContext.MDC_KEY_XID, session.getXid());
@@ -153,12 +154,15 @@ public class DefaultCore implements Core {
         boolean shouldCommit = SessionHolder.lockAndExecute(globalSession, () -> {
             if (globalSession.getStatus() == GlobalStatus.Begin) {
                 // Highlight: Firstly, close the session, then no more branch can be registered.
+                // AT模式 需要删除branch-table中的数据
                 globalSession.closeAndClean();
                 if (globalSession.canBeCommittedAsync()) {
+                    // 异步提交
                     globalSession.asyncCommit();
                     MetricsPublisher.postSessionDoneEvent(globalSession, GlobalStatus.Committed, false, false);
                     return false;
                 } else {
+                    // 同步提交（内部修改global-table中的status）
                     globalSession.changeGlobalStatus(GlobalStatus.Committing);
                     return true;
                 }
@@ -167,15 +171,18 @@ public class DefaultCore implements Core {
         });
 
         if (shouldCommit) {
+            // 全局事务提交 处理
             boolean success = doGlobalCommit(globalSession, false);
             //If successful and all remaining branches can be committed asynchronously, do async commit.
             if (success && globalSession.hasBranch() && globalSession.canBeCommittedAsync()) {
+                // 感觉是历史逻辑
                 globalSession.asyncCommit();
                 return GlobalStatus.Committed;
             } else {
                 return globalSession.getStatus();
             }
         } else {
+            // 如果全局事务是提交中，则设置为已提交
             return globalSession.getStatus() == GlobalStatus.AsyncCommitting ? GlobalStatus.Committed : globalSession.getStatus();
         }
     }
@@ -201,13 +208,17 @@ public class DefaultCore implements Core {
                     return CONTINUE;
                 }
                 try {
+                    // 分支事务提交
                     BranchStatus branchStatus = getCore(branchSession.getBranchType()).branchCommit(globalSession, branchSession);
                     if (isXaerNotaTimeout(globalSession,branchStatus)) {
                         LOGGER.info("Commit branch XAER_NOTA retry timeout, xid = {} branchId = {}", globalSession.getXid(), branchSession.getBranchId());
                         branchStatus = BranchStatus.PhaseTwo_Committed;
                     }
+                    // 客户端分支事务提交状态判断
                     switch (branchStatus) {
                         case PhaseTwo_Committed:
+                            // PhaseTwo_Committed 二阶段已提交
+                            // 删除 branch-table中的数据
                             SessionHelper.removeBranch(globalSession, branchSession, !retrying);
                             return CONTINUE;
                         case PhaseTwo_CommitFailed_Unretryable:
@@ -258,6 +269,7 @@ public class DefaultCore implements Core {
         }
         // if it succeeds and there is no branch, retrying=true is the asynchronous state when retrying. EndCommitted is
         // executed to improve concurrency performance, and the global transaction ends..
+        // 分支事务提交完成
         if (success && globalSession.getBranchSessions().isEmpty()) {
             SessionHelper.endCommitted(globalSession, retrying);
             LOGGER.info("Committing global transaction is successfully done, xid = {}.", globalSession.getXid());
@@ -267,6 +279,7 @@ public class DefaultCore implements Core {
 
     @Override
     public GlobalStatus rollback(String xid) throws TransactionException {
+        // 从数据库中读取全局事务信息
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
         if (globalSession == null) {
             return GlobalStatus.Finished;
@@ -305,6 +318,7 @@ public class DefaultCore implements Core {
                     return CONTINUE;
                 }
                 try {
+                    // 分支事务进行回滚
                     BranchStatus branchStatus = branchRollback(globalSession, branchSession);
                     if (isXaerNotaTimeout(globalSession, branchStatus)) {
                         LOGGER.info("Rollback branch XAER_NOTA retry timeout, xid = {} branchId = {}", globalSession.getXid(), branchSession.getBranchId());
@@ -345,6 +359,7 @@ public class DefaultCore implements Core {
         // In db mode, lock and branch data residual problems may occur.
         // Therefore, execution needs to be delayed here and cannot be executed synchronously.
         if (success) {
+            // 全局事务回滚
             SessionHelper.endRollbacked(globalSession, retrying);
             LOGGER.info("Rollback global transaction successfully, xid = {}.", globalSession.getXid());
         }

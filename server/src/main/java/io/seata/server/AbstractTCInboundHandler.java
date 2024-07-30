@@ -61,6 +61,7 @@ public abstract class AbstractTCInboundHandler extends AbstractExceptionHandler 
             @Override
             public void execute(GlobalBeginRequest request, GlobalBeginResponse response) throws TransactionException {
                 try {
+                    // 全局事务 开启
                     doGlobalBegin(request, response, rpcContext);
                 } catch (StoreException e) {
                     throw new TransactionException(TransactionExceptionCode.FailedStore,
@@ -92,6 +93,7 @@ public abstract class AbstractTCInboundHandler extends AbstractExceptionHandler 
             public void execute(GlobalCommitRequest request, GlobalCommitResponse response)
                 throws TransactionException {
                 try {
+                    // 全局事务提交 处理
                     doGlobalCommit(request, response, rpcContext);
                 } catch (StoreException e) {
                     throw new TransactionException(TransactionExceptionCode.FailedStore,
@@ -137,6 +139,7 @@ public abstract class AbstractTCInboundHandler extends AbstractExceptionHandler 
             public void execute(GlobalRollbackRequest request, GlobalRollbackResponse response)
                 throws TransactionException {
                 try {
+                    // 执行全局事务回滚逻辑
                     doGlobalRollback(request, response, rpcContext);
                 } catch (StoreException e) {
                     throw new TransactionException(TransactionExceptionCode.FailedStore, String
@@ -181,6 +184,7 @@ public abstract class AbstractTCInboundHandler extends AbstractExceptionHandler 
             public void execute(BranchRegisterRequest request, BranchRegisterResponse response)
                 throws TransactionException {
                 try {
+                    // 分支事务注册
                     doBranchRegister(request, response, rpcContext);
                 } catch (StoreException e) {
                     throw new TransactionException(TransactionExceptionCode.FailedStore, String

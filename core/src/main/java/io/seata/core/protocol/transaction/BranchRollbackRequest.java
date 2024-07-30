@@ -19,9 +19,7 @@ import io.seata.core.protocol.MessageType;
 import io.seata.core.rpc.RpcContext;
 
 /**
- * The type Branch rollback request.
- *
- * @author slievrly
+ * 分支事务回滚 请求-处理类
  */
 public class BranchRollbackRequest extends AbstractBranchEndRequest {
 
@@ -32,6 +30,7 @@ public class BranchRollbackRequest extends AbstractBranchEndRequest {
 
     @Override
     public AbstractTransactionResponse handle(RpcContext rpcContext) {
+        // 分支事务回滚 处理
         return handler.handle(this);
     }
 }

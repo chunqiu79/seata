@@ -18,9 +18,7 @@ package io.seata.core.protocol.transaction;
 import io.seata.core.protocol.MessageType;
 
 /**
- * The type Branch rollback response.
- *
- * @author slievrly
+ * 分支事务回滚 响应-处理类
  */
 public class BranchRollbackResponse extends AbstractBranchEndResponse {
 

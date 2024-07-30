@@ -65,6 +65,7 @@ import static io.seata.common.DefaultValues.*;
  * The type Global transaction scanner.
  *
  * @author slievrly
+ * 实现了 AbstractAutoProxyCreator 调用 wrapIfNecessary
  */
 public class GlobalTransactionScanner extends AbstractAutoProxyCreator
         implements ConfigurationChangeListener, InitializingBean, ApplicationContextAware, DisposableBean {
@@ -209,13 +210,11 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
         if (StringUtils.isNullOrEmpty(applicationId) || StringUtils.isNullOrEmpty(txServiceGroup)) {
             throw new IllegalArgumentException(String.format("applicationId: %s, txServiceGroup: %s", applicationId, txServiceGroup));
         }
-        //init TM
         // 初始化 tm客户端
         TMClient.init(applicationId, txServiceGroup, accessKey, secretKey);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Transaction Manager Client is initialized. applicationId[{}] txServiceGroup[{}]", applicationId, txServiceGroup);
         }
-        //init RM
         // 初始化 rm客户端（内部和tm差不多）
         RMClient.init(applicationId, txServiceGroup);
         if (LOGGER.isInfoEnabled()) {

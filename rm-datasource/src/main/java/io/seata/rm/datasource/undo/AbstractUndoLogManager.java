@@ -15,17 +15,6 @@
  */
 package io.seata.rm.datasource.undo;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import io.seata.common.Constants;
 import io.seata.common.util.CollectionUtils;
 import io.seata.common.util.SizeUtil;
@@ -44,10 +33,10 @@ import io.seata.rm.datasource.sql.struct.TableMetaCacheFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.seata.common.DefaultValues.DEFAULT_TRANSACTION_UNDO_LOG_TABLE;
-import static io.seata.common.DefaultValues.DEFAULT_CLIENT_UNDO_COMPRESS_ENABLE;
-import static io.seata.common.DefaultValues.DEFAULT_CLIENT_UNDO_COMPRESS_TYPE;
-import static io.seata.common.DefaultValues.DEFAULT_CLIENT_UNDO_COMPRESS_THRESHOLD;
+import java.sql.*;
+import java.util.*;
+
+import static io.seata.common.DefaultValues.*;
 import static io.seata.core.exception.TransactionExceptionCode.BranchRollbackFailed_Retriable;
 
 /**
@@ -150,6 +139,7 @@ public abstract class AbstractUndoLogManager implements UndoLogManager {
         }
         int xidSize = xids.size();
         int branchIdSize = branchIds.size();
+        // 删除sql：delete from undo_log where branch_id in (?,?)
         String batchDeleteSql = toBatchDeleteUndoLogSql(xidSize, branchIdSize);
         try (PreparedStatement deletePST = conn.prepareStatement(batchDeleteSql)) {
             int paramsIndex = 1;
@@ -265,10 +255,12 @@ public abstract class AbstractUndoLogManager implements UndoLogManager {
 
                 // The entire undo process should run in a local transaction.
                 if (originalAutoCommit = conn.getAutoCommit()) {
+                    // 关闭自动提交
                     conn.setAutoCommit(false);
                 }
 
-                // Find UNDO LOG
+                // SELECT * FROM undo_log WHERE branch_id = ** AND xid = ** FOR UPDATE
+                // 这里会加 for-update排他锁
                 selectPST = conn.prepareStatement(SELECT_UNDO_LOG_SQL);
                 selectPST.setLong(1, branchId);
                 selectPST.setString(2, xid);
@@ -329,13 +321,16 @@ public abstract class AbstractUndoLogManager implements UndoLogManager {
                 // See https://github.com/seata/seata/issues/489
 
                 if (exists) {
+                    // 数据库存在对应的undo-log记录，则删除
                     deleteUndoLog(xid, branchId, conn);
+                    // 提交
                     conn.commit();
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("xid {} branch {}, undo_log deleted with {}", xid, branchId,
                             State.GlobalFinished.name());
                     }
                 } else {
+                    // 数据库存在对应的undo-log记录，则插入
                     insertUndoLogWithGlobalFinished(xid, branchId, UndoLogParserFactory.getInstance(), conn);
                     conn.commit();
                     if (LOGGER.isInfoEnabled()) {

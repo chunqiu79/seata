@@ -15,14 +15,6 @@
  */
 package io.seata.server.coordinator;
 
-import java.time.Duration;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
 import io.netty.channel.Channel;
 import io.seata.common.thread.NamedThreadFactory;
 import io.seata.common.util.CollectionUtils;
@@ -34,25 +26,7 @@ import io.seata.core.exception.TransactionException;
 import io.seata.core.model.GlobalStatus;
 import io.seata.core.protocol.AbstractMessage;
 import io.seata.core.protocol.AbstractResultMessage;
-import io.seata.core.protocol.transaction.AbstractTransactionRequestToTC;
-import io.seata.core.protocol.transaction.AbstractTransactionResponse;
-import io.seata.core.protocol.transaction.BranchRegisterRequest;
-import io.seata.core.protocol.transaction.BranchRegisterResponse;
-import io.seata.core.protocol.transaction.BranchReportRequest;
-import io.seata.core.protocol.transaction.BranchReportResponse;
-import io.seata.core.protocol.transaction.GlobalBeginRequest;
-import io.seata.core.protocol.transaction.GlobalBeginResponse;
-import io.seata.core.protocol.transaction.GlobalCommitRequest;
-import io.seata.core.protocol.transaction.GlobalCommitResponse;
-import io.seata.core.protocol.transaction.GlobalLockQueryRequest;
-import io.seata.core.protocol.transaction.GlobalLockQueryResponse;
-import io.seata.core.protocol.transaction.GlobalReportRequest;
-import io.seata.core.protocol.transaction.GlobalReportResponse;
-import io.seata.core.protocol.transaction.GlobalRollbackRequest;
-import io.seata.core.protocol.transaction.GlobalRollbackResponse;
-import io.seata.core.protocol.transaction.GlobalStatusRequest;
-import io.seata.core.protocol.transaction.GlobalStatusResponse;
-import io.seata.core.protocol.transaction.UndoLogDeleteRequest;
+import io.seata.core.protocol.transaction.*;
 import io.seata.core.rpc.Disposable;
 import io.seata.core.rpc.RemotingServer;
 import io.seata.core.rpc.RpcContext;
@@ -61,23 +35,23 @@ import io.seata.core.rpc.netty.ChannelManager;
 import io.seata.core.rpc.netty.NettyRemotingServer;
 import io.seata.server.AbstractTCInboundHandler;
 import io.seata.server.metrics.MetricsPublisher;
-import io.seata.server.session.BranchSession;
-import io.seata.server.session.GlobalSession;
-import io.seata.server.session.SessionCondition;
-import io.seata.server.session.SessionHelper;
-import io.seata.server.session.SessionHolder;
+import io.seata.server.session.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import static io.seata.common.Constants.ASYNC_COMMITTING;
-import static io.seata.common.Constants.RETRY_COMMITTING;
-import static io.seata.common.Constants.RETRY_ROLLBACKING;
-import static io.seata.common.Constants.TX_TIMEOUT_CHECK;
-import static io.seata.common.Constants.UNDOLOG_DELETE;
+import java.time.Duration;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import static io.seata.common.Constants.*;
 
 /**
- * The type Default coordinator.
+ * tc 的核心处理类
  */
 public class DefaultCoordinator extends AbstractTCInboundHandler implements TransactionMessageHandler, Disposable {
 
@@ -87,29 +61,39 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
 
     /**
      * The constant COMMITTING_RETRY_PERIOD.
+     * 属性：server.recovery.committingRetryPeriod
+     * 默认1秒
      */
     protected static final long COMMITTING_RETRY_PERIOD = CONFIG.getLong(ConfigurationKeys.COMMITING_RETRY_PERIOD,
         1000L);
 
     /**
      * The constant ASYNC_COMMITTING_RETRY_PERIOD.
+     * 属性：server.recovery.asynCommittingRetryPeriod
+     * 默认1秒
      */
     protected static final long ASYNC_COMMITTING_RETRY_PERIOD = CONFIG.getLong(
         ConfigurationKeys.ASYN_COMMITING_RETRY_PERIOD, 1000L);
 
     /**
      * The constant ROLLBACKING_RETRY_PERIOD.
+     * 属性：server.recovery.rollbackingRetryPeriod
+     * 默认1秒
      */
     protected static final long ROLLBACKING_RETRY_PERIOD = CONFIG.getLong(ConfigurationKeys.ROLLBACKING_RETRY_PERIOD,
         1000L);
 
     /**
      * The constant TIMEOUT_RETRY_PERIOD.
+     * 属性：server.recovery.timeoutRetryPeriod
+     * 默认1秒
      */
     protected static final long TIMEOUT_RETRY_PERIOD = CONFIG.getLong(ConfigurationKeys.TIMEOUT_RETRY_PERIOD, 1000L);
 
     /**
      * The Transaction undo log delete period.
+     * 属性：server.undo.logDeletePeriod
+     * 默认24小时
      */
     protected static final long UNDO_LOG_DELETE_PERIOD = CONFIG.getLong(
             ConfigurationKeys.TRANSACTION_UNDO_LOG_DELETE_PERIOD, 24 * 60 * 60 * 1000);
@@ -233,6 +217,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
     @Override
     protected void doGlobalBegin(GlobalBeginRequest request, GlobalBeginResponse response, RpcContext rpcContext)
             throws TransactionException {
+        // 全局事务 开启
         response.setXid(core.begin(rpcContext.getApplicationId(), rpcContext.getTransactionServiceGroup(),
                 request.getTransactionName(), request.getTimeout()));
         if (LOGGER.isInfoEnabled()) {
@@ -272,6 +257,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
     @Override
     protected void doBranchRegister(BranchRegisterRequest request, BranchRegisterResponse response,
                                     RpcContext rpcContext) throws TransactionException {
+        // 分支事务注册 处理
         MDC.put(RootContext.MDC_KEY_XID, request.getXid());
         response.setBranchId(
                 core.branchRegister(request.getBranchType(), request.getResourceId(), rpcContext.getClientId(),
@@ -390,6 +376,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
      * Handle retry committing.
      */
     protected void handleRetryCommitting() {
+        // GlobalStatus.Committing, GlobalStatus.CommitRetrying
         SessionCondition retryCommittingSessionCondition = new SessionCondition(retryCommittingStatuses);
         retryCommittingSessionCondition.setLazyLoadBranch(true);
         Collection<GlobalSession> committingSessions =
@@ -447,6 +434,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
 
     /**
      * Undo log delete.
+     * 通过 rm 删除
      */
     protected void undoLogDelete() {
         Map<String, Channel> rmChannels = ChannelManager.getRmChannels();
@@ -479,22 +467,23 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
      * Init.
      */
     public void init() {
+        // 回滚重试
         retryRollbacking.scheduleAtFixedRate(
             () -> SessionHolder.distributedLockAndExecute(RETRY_ROLLBACKING, this::handleRetryRollbacking), 0,
             ROLLBACKING_RETRY_PERIOD, TimeUnit.MILLISECONDS);
-
+        // 提交重试
         retryCommitting.scheduleAtFixedRate(
             () -> SessionHolder.distributedLockAndExecute(RETRY_COMMITTING, this::handleRetryCommitting), 0,
             COMMITTING_RETRY_PERIOD, TimeUnit.MILLISECONDS);
-
+        // 异步提交
         asyncCommitting.scheduleAtFixedRate(
             () -> SessionHolder.distributedLockAndExecute(ASYNC_COMMITTING, this::handleAsyncCommitting), 0,
             ASYNC_COMMITTING_RETRY_PERIOD, TimeUnit.MILLISECONDS);
-
+        // 检查 超时
         timeoutCheck.scheduleAtFixedRate(
             () -> SessionHolder.distributedLockAndExecute(TX_TIMEOUT_CHECK, this::timeoutCheck), 0,
             TIMEOUT_RETRY_PERIOD, TimeUnit.MILLISECONDS);
-
+        // 删除 undo-log （内部是 rm 根据存储天数来删除的）
         undoLogDelete.scheduleAtFixedRate(
             () -> SessionHolder.distributedLockAndExecute(UNDOLOG_DELETE, this::undoLogDelete),
             UNDO_LOG_DELAY_DELETE_PERIOD, UNDO_LOG_DELETE_PERIOD, TimeUnit.MILLISECONDS);
@@ -507,7 +496,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
         }
         AbstractTransactionRequestToTC transactionRequest = (AbstractTransactionRequestToTC) request;
         transactionRequest.setTCInboundHandler(this);
-
+        // 处理请求
         return transactionRequest.handle(context);
     }
 
