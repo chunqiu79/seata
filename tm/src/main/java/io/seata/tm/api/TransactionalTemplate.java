@@ -208,8 +208,10 @@ public class TransactionalTemplate {
 
     private void beginTransaction(TransactionInfo txInfo, GlobalTransaction tx) throws TransactionalExecutor.ExecutionException {
         try {
+            // 扩展点：发起全局事务之前进行的操作
             triggerBeforeBegin();
             tx.begin(txInfo.getTimeOut(), txInfo.getName());
+            // 扩展点：发起全局事务之后进行的操作
             triggerAfterBegin();
         } catch (TransactionException txe) {
             throw new TransactionalExecutor.ExecutionException(tx, txe,

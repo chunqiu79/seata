@@ -15,8 +15,6 @@
  */
 package io.seata.spring.boot.autoconfigure;
 
-import javax.sql.DataSource;
-
 import io.seata.spring.annotation.datasource.SeataAutoDataSourceProxyCreator;
 import io.seata.spring.boot.autoconfigure.properties.SeataProperties;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -24,6 +22,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+
+import javax.sql.DataSource;
 
 import static io.seata.spring.annotation.datasource.AutoDataSourceProxyRegistrar.BEAN_NAME_SEATA_AUTO_DATA_SOURCE_PROXY_CREATOR;
 
@@ -39,6 +39,7 @@ public class SeataDataSourceAutoConfiguration {
 
     /**
      * The bean seataAutoDataSourceProxyCreator.
+     * seata的 数据源代理
      */
     @Bean(BEAN_NAME_SEATA_AUTO_DATA_SOURCE_PROXY_CREATOR)
     @ConditionalOnMissingBean(SeataAutoDataSourceProxyCreator.class)

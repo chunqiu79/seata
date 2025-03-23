@@ -15,16 +15,6 @@
  */
 package io.seata.rm.datasource.exec;
 
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import io.seata.common.exception.NotSupportYetException;
 import io.seata.common.util.CollectionUtils;
 import io.seata.rm.datasource.AbstractConnectionProxy;
@@ -36,6 +26,16 @@ import io.seata.sqlparser.SQLRecognizer;
 import io.seata.sqlparser.util.JdbcConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * The type Abstract dml base executor.
@@ -96,11 +96,15 @@ public abstract class AbstractDMLBaseExecutor<T, S extends Statement> extends Ba
         if (!JdbcConstants.MYSQL.equalsIgnoreCase(getDbType()) && isMultiPk()) {
             throw new NotSupportYetException("multi pk only support mysql!");
         }
+        // sql执行之前的镜像
         TableRecords beforeImage = beforeImage();
+        // sql执行
         T result = statementCallback.execute(statementProxy.getTargetStatement(), args);
         int updateCount = statementProxy.getUpdateCount();
         if (updateCount > 0) {
+            // sql执行之后的镜像
             TableRecords afterImage = afterImage(beforeImage);
+            // 预处理undoLog
             prepareUndoLog(beforeImage, afterImage);
         }
         return result;
@@ -138,9 +142,14 @@ public abstract class AbstractDMLBaseExecutor<T, S extends Statement> extends Ba
     protected T executeAutoCommitTrue(Object[] args) throws Throwable {
         ConnectionProxy connectionProxy = statementProxy.getConnectionProxy();
         try {
+            /*
+             * 设置为手动提交
+             * 理所应当，因为如果不修改成手动提交，那么就没有tc什么事了
+             */
             connectionProxy.changeAutoCommit();
             return new LockRetryPolicy(connectionProxy).execute(() -> {
                 T result = executeAutoCommitFalse(args);
+                // 代理的connection 进行事务提交
                 connectionProxy.commit();
                 return result;
             });
@@ -152,6 +161,9 @@ public abstract class AbstractDMLBaseExecutor<T, S extends Statement> extends Ba
             }
             throw e;
         } finally {
+            /*
+             * 重置回自动提交
+             */
             connectionProxy.getContext().reset();
             connectionProxy.setAutoCommit(true);
         }

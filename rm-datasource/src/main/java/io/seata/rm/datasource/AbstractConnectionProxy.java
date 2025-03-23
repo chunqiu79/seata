@@ -49,11 +49,13 @@ import java.util.concurrent.Executor;
 public abstract class AbstractConnectionProxy implements Connection {
 
     /**
+     * 数据源代理
      * The Data source proxy.
      */
     protected DataSourceProxy dataSourceProxy;
 
     /**
+     * 真正的 connection
      * The Target connection.
      */
     protected Connection targetConnection;
@@ -107,6 +109,7 @@ public abstract class AbstractConnectionProxy implements Connection {
         String dbType = getDbType();
         // support oracle 10.2+
         PreparedStatement targetPreparedStatement = null;
+        // at 模式
         if (BranchType.AT == RootContext.getBranchType()) {
             List<SQLRecognizer> sqlRecognizers = SQLVisitorFactory.get(sql, dbType);
             if (sqlRecognizers != null && sqlRecognizers.size() == 1) {

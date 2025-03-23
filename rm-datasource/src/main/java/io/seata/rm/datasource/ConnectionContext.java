@@ -15,6 +15,14 @@
  */
 package io.seata.rm.datasource;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.seata.common.exception.ShouldNeverHappenException;
+import io.seata.common.util.CollectionUtils;
+import io.seata.common.util.StringUtils;
+import io.seata.core.exception.TransactionException;
+import io.seata.rm.datasource.undo.SQLUndoLog;
+
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.ArrayList;
@@ -26,19 +34,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.seata.common.exception.ShouldNeverHappenException;
-import io.seata.common.util.CollectionUtils;
-import io.seata.common.util.StringUtils;
-import io.seata.core.exception.TransactionException;
-import io.seata.rm.datasource.undo.SQLUndoLog;
-
 import static io.seata.common.Constants.AUTO_COMMIT;
 import static io.seata.common.Constants.SKIP_CHECK_LOCK;
 
 /**
- * The type Connection context.
+ * 数据库连接上下文
  *
  * @author sharajava
  */
@@ -56,11 +56,22 @@ public class ConnectionContext {
     };
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-
+    /**
+     * 全局事务id
+     */
     private String xid;
+    /**
+     * 分支事务id
+     */
     private Long branchId;
+    /**
+     * 是否需要全局锁
+     */
     private boolean isGlobalLockRequire;
     private Savepoint currentSavepoint = DEFAULT_SAVEPOINT;
+    /**
+     * 自动提交是否变更
+     */
     private boolean autoCommitChanged;
     private final Map<String, Object> applicationData = new HashMap<>(2, 1.0001f);
 
@@ -69,7 +80,7 @@ public class ConnectionContext {
      */
     private final Map<Savepoint, Set<String>> lockKeysBuffer = new LinkedHashMap<>();
     /**
-     * the undo items buffer
+     * undoLog 缓冲区
      */
     private final Map<Savepoint, List<SQLUndoLog>> sqlUndoItemsBuffer = new LinkedHashMap<>();
 
@@ -161,7 +172,7 @@ public class ConnectionContext {
     }
 
     /**
-     * In global transaction boolean.
+     * 如果 xid（全局事务id） 不为空，则认为在全局事务中
      *
      * @return the boolean
      */
@@ -170,7 +181,7 @@ public class ConnectionContext {
     }
 
     /**
-     * Is branch registered boolean.
+     * 如果 branchId（分支事务id） 不为空，则认为分支事务注册了
      *
      * @return the boolean
      */
@@ -179,7 +190,7 @@ public class ConnectionContext {
     }
 
     /**
-     * Bind.
+     * 将 全局事务id 绑定到 connection连接上下文上
      *
      * @param xid the xid
      */

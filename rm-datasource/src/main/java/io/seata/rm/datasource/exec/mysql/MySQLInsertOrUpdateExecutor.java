@@ -15,17 +15,6 @@
  */
 package io.seata.rm.datasource.exec.mysql;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Collections;
-import java.util.StringJoiner;
-
-
 import com.google.common.base.Joiner;
 import io.seata.common.exception.NotSupportYetException;
 import io.seata.common.exception.ShouldNeverHappenException;
@@ -50,6 +39,16 @@ import io.seata.sqlparser.SQLType;
 import io.seata.sqlparser.struct.Defaultable;
 import io.seata.sqlparser.struct.Null;
 import io.seata.sqlparser.util.JdbcConstants;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
 
 /**
  * @author: yangyicong
@@ -99,15 +98,18 @@ public class MySQLInsertOrUpdateExecutor extends MySQLInsertExecutor implements 
         if (!JdbcConstants.MYSQL.equalsIgnoreCase(getDbType()) && getTableMeta().getPrimaryKeyOnlyName().size() > 1) {
             throw new NotSupportYetException("multi pk only support mysql!");
         }
+        // sql执行之前的镜像
         TableRecords beforeImage = beforeImage();
         if (CollectionUtils.isNotEmpty(beforeImage.getRows())) {
             isUpdateFlag = true;
         } else {
             beforeImage = TableRecords.empty(getTableMeta());
         }
+        // 真正执行
         Object result = statementCallback.execute(statementProxy.getTargetStatement(), args);
         int updateCount = statementProxy.getUpdateCount();
         if (updateCount > 0) {
+            // sql执行之后的镜像
             TableRecords afterImage = afterImage(beforeImage);
             prepareUndoLogAll(beforeImage, afterImage);
         }

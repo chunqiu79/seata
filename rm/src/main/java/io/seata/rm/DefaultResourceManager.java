@@ -15,11 +15,6 @@
  */
 package io.seata.rm;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import io.seata.common.exception.FrameworkException;
 import io.seata.common.loader.EnhancedServiceLoader;
 import io.seata.common.util.CollectionUtils;
@@ -28,6 +23,11 @@ import io.seata.core.model.BranchStatus;
 import io.seata.core.model.BranchType;
 import io.seata.core.model.Resource;
 import io.seata.core.model.ResourceManager;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * default resource manager, adapt all resource managers
@@ -93,6 +93,10 @@ public class DefaultResourceManager implements ResourceManager {
     public Long branchRegister(BranchType branchType, String resourceId,
                                String clientId, String xid, String applicationData, String lockKeys)
         throws TransactionException {
+        /*
+         * 按branchType分类
+         * at: 实现类是 DataSourceManager --> AbstractResourceManager
+         */
         return getResourceManager(branchType).branchRegister(branchType, resourceId, clientId, xid, applicationData,
             lockKeys);
     }

@@ -15,16 +15,16 @@
  */
 package io.seata.spring.annotation;
 
+import io.seata.common.DefaultValues;
+import io.seata.tm.api.transaction.Propagation;
+import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.core.annotation.AliasFor;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import io.seata.common.DefaultValues;
-import io.seata.tm.api.transaction.Propagation;
-import org.aopalliance.intercept.MethodInvocation;
-import org.springframework.core.annotation.AliasFor;
 
 /**
  * The interface Global transactional.

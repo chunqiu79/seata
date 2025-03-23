@@ -15,10 +15,6 @@
  */
 package io.seata.rm.datasource.exec;
 
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.List;
-
 import io.seata.common.exception.NotSupportYetException;
 import io.seata.common.loader.EnhancedServiceLoader;
 import io.seata.common.util.CollectionUtils;
@@ -29,6 +25,10 @@ import io.seata.rm.datasource.exec.mysql.MySQLInsertOrUpdateExecutor;
 import io.seata.rm.datasource.sql.SQLVisitorFactory;
 import io.seata.sqlparser.SQLRecognizer;
 import io.seata.sqlparser.util.JdbcConstants;
+
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
 
 /**
  * The type Execute template.
@@ -114,6 +114,7 @@ public class ExecuteTemplate {
                         }
                         break;
                     default:
+                        // 默认，就是普通查询，不加锁的查询
                         executor = new PlainExecutor<>(statementProxy, statementCallback);
                         break;
                 }
@@ -123,6 +124,7 @@ public class ExecuteTemplate {
         }
         T rs;
         try {
+            // 执行器执行
             rs = executor.execute(args);
         } catch (Throwable ex) {
             if (!(ex instanceof SQLException)) {

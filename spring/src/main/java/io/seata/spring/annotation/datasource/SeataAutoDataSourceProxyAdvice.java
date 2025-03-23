@@ -15,15 +15,15 @@
  */
 package io.seata.spring.annotation.datasource;
 
-import javax.sql.DataSource;
-import java.lang.reflect.Method;
-
 import io.seata.core.context.RootContext;
 import io.seata.core.model.BranchType;
 import io.seata.rm.datasource.SeataDataSourceProxy;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.IntroductionInfo;
+
+import javax.sql.DataSource;
+import java.lang.reflect.Method;
 
 /**
  * @author xingfudeshi@gmail.com
@@ -63,6 +63,7 @@ public class SeataAutoDataSourceProxyAdvice implements MethodInterceptor, Introd
 
         // switch invoke instance to its proxy
         DataSource origin = (DataSource) invocation.getThis();
+        // 从 dataSource代理缓存中获取 数据源代理对象
         SeataDataSourceProxy proxy = DataSourceProxyHolder.get(origin);
         Object[] args = invocation.getArguments();
         return declared.invoke(proxy, args);
