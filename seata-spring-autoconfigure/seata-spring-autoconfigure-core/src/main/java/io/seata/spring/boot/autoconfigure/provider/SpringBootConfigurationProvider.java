@@ -108,6 +108,7 @@ public class SpringBootConfigurationProvider implements ExtConfigurationProvider
         String propertyPrefix = getPropertyPrefix(dataId);
         // 获取属性的后缀
         String propertySuffix = getPropertySuffix(dataId);
+        // 不同的前缀 从 不同的配置文件中 读取
         Class<?> propertyClass = PROPERTY_BEAN_MAP.get(propertyPrefix);
         Object valueObject = null;
         if (propertyClass != null) {
@@ -115,6 +116,10 @@ public class SpringBootConfigurationProvider implements ExtConfigurationProvider
                 valueObject = getFieldValue(
                     Objects.requireNonNull(PROPERTY_BEAN_INSTANCE_MAP.computeIfAbsent(propertyPrefix, k -> {
                         try {
+                            /*
+                             * 每个不同的前缀 只会调用1次
+                             * 调用对应 配置类 的 无参构造方法
+                             */
                             return propertyClass.newInstance();
                         } catch (InstantiationException | IllegalAccessException e) {
                             LOGGER.error("PropertyClass for prefix: [" + propertyPrefix

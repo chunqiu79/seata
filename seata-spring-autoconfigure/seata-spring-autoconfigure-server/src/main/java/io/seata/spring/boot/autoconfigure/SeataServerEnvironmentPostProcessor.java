@@ -70,14 +70,19 @@ public class SeataServerEnvironmentPostProcessor implements EnvironmentPostProce
      */
     public static void init() {
         if (INIT.compareAndSet(false, true)) {
+            // "seata.server"
             PROPERTY_BEAN_MAP.put(SERVER_PREFIX, ServerProperties.class);
             PROPERTY_BEAN_MAP.put(SERVER_UNDO_PREFIX, ServerUndoProperties.class);
             PROPERTY_BEAN_MAP.put(SERVER_RECOVERY_PREFIX, ServerRecoveryProperties.class);
             PROPERTY_BEAN_MAP.put(METRICS_PREFIX, MetricsProperties.class);
+            // "seata.store"
             PROPERTY_BEAN_MAP.put(STORE_PREFIX, StoreProperties.class);
             PROPERTY_BEAN_MAP.put(STORE_SESSION_PREFIX, StoreProperties.Session.class);
+            // "seata.store.lock"
             PROPERTY_BEAN_MAP.put(STORE_LOCK_PREFIX, StoreProperties.Lock.class);
+            // "seata.store.file"
             PROPERTY_BEAN_MAP.put(STORE_FILE_PREFIX, StoreFileProperties.class);
+            // "seata.store.db"
             PROPERTY_BEAN_MAP.put(STORE_DB_PREFIX, StoreDBProperties.class);
             PROPERTY_BEAN_MAP.put(STORE_REDIS_PREFIX, StoreRedisProperties.class);
             PROPERTY_BEAN_MAP.put(STORE_REDIS_SINGLE_PREFIX, StoreRedisProperties.Single.class);
