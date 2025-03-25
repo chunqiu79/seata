@@ -15,9 +15,9 @@
  */
 package io.seata.spring.boot.autoconfigure;
 
-import java.util.HashMap;
-
 import io.seata.config.ConfigurationKeys;
+
+import java.util.HashMap;
 
 /**
  * @author xingfudeshi@gmail.com
@@ -87,6 +87,11 @@ public interface StarterConstants {
 
 
     int MAP_CAPACITY = 64;
+
+    /**
+     * io.seata.spring.boot.autoconfigure.SeataCoreEnvironmentPostProcessor#init() 的时候会 put 值
+     * io.seata.spring.boot.autoconfigure.SeataServerEnvironmentPostProcessor#init() 的时候会 put 值
+     */
     HashMap<String, Class<?>> PROPERTY_BEAN_MAP = new HashMap<>(MAP_CAPACITY);
     /**
      * The following special keys need to be normalized.

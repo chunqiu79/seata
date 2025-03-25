@@ -15,12 +15,6 @@
  */
 package io.seata.spring.boot.autoconfigure.provider;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Stream;
 import io.seata.common.exception.ShouldNeverHappenException;
 import io.seata.common.holder.ObjectHolder;
 import io.seata.config.Configuration;
@@ -32,6 +26,13 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
 import org.springframework.core.env.ConfigurableEnvironment;
+
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import static io.seata.common.Constants.OBJECT_KEY_SPRING_CONFIGURABLE_ENVIRONMENT;
 import static io.seata.common.util.StringFormatUtils.DOT;
@@ -56,11 +57,23 @@ public class SpringBootConfigurationProvider implements ExtConfigurationProvider
 
     @Override
     public Configuration provide(Configuration originalConfiguration) {
+        // originalConfiguration 其实就是 文件配置
         return (Configuration)Enhancer.create(originalConfiguration.getClass(),
             (MethodInterceptor)(proxy, method, args, methodProxy) -> {
+                /*
+                 * get方法&&参数>0 增强
+                 * FileConfiguration 的 所有get方法&&参数>0 的方法
+                 * 1. io.seata.config.FileConfiguration.getConfigFile 这个方法只有在增强之前会被调用
+                 * 2. AbstractConfiguration
+                 * 3. Configuration
+                 * 会发现 AbstractConfiguration 和 Configuration 符合 get方法&&参数>0 的方法 第1个参数都是dataId
+                 */
                 if (method.getName().startsWith(INTERCEPT_METHOD_PREFIX) && args.length > 0) {
                     Object result;
                     String rawDataId = (String)args[0];
+                    /*
+                     * dataId 其实就是配置的key
+                     */
                     result = originalConfiguration.getConfigFromSys(rawDataId);
                     if (null == result) {
                         if (args.length == 1) {
@@ -91,7 +104,9 @@ public class SpringBootConfigurationProvider implements ExtConfigurationProvider
     }
 
     private Object get(String dataId) throws IllegalAccessException {
+        // 获取属性的前缀
         String propertyPrefix = getPropertyPrefix(dataId);
+        // 获取属性的后缀
         String propertySuffix = getPropertySuffix(dataId);
         Class<?> propertyClass = PROPERTY_BEAN_MAP.get(propertyPrefix);
         Object valueObject = null;
@@ -148,20 +163,33 @@ public class SpringBootConfigurationProvider implements ExtConfigurationProvider
      * @return dataId
      */
     private String convertDataId(String rawDataId) {
+        // 结尾是 "grouplist"
         if (rawDataId.endsWith(SPECIAL_KEY_GROUPLIST)) {
+            /*
+             * 删除 后面的 ".grouplist" && 前面的 "service."
+             * 其实就是 找到 service.*.grouplist 的这个 *
+             * 例如：service.cluster1.grouplist 得到的就是 cluster1
+             * 没错，这个 suffix 其实就是 集群名称
+             */
             String suffix = StringUtils.removeStart(StringUtils.removeEnd(rawDataId, DOT + SPECIAL_KEY_GROUPLIST),
                 SPECIAL_KEY_SERVICE + DOT);
             // change the format of default.grouplist to grouplist.default
+            /*
+             * 例如：service.cluster1.grouplist 得到的就是 seata.service.grouplist.cluster1
+             * 为啥要这么做，因为springboot语法的要求
+             * https://seata.apache.org/zh-cn/docs/user/configurations#%E9%99%84%E5%BD%95-2
+             */
             return SERVICE_PREFIX + DOT + SPECIAL_KEY_GROUPLIST + DOT + suffix;
         }
+        // 添加 "seata." 前缀
         return SEATA_PREFIX + DOT + rawDataId;
     }
 
     /**
-     * Get property prefix
-     *
-     * @param dataId
-     * @return propertyPrefix
+     * 获取属性的前缀
+     * 1. 包含 "vgroupMapping"，前缀就是 "seata.service"
+     * 2. 包含 "grouplist"，前缀就是 "seata.service"
+     * 3. 否则，获取最后1个 "."，它前面的都是前缀
      */
     private String getPropertyPrefix(String dataId) {
         if (dataId.contains(SPECIAL_KEY_VGROUP_MAPPING)) {
@@ -174,7 +202,10 @@ public class SpringBootConfigurationProvider implements ExtConfigurationProvider
     }
 
     /**
-     * Get property suffix
+     * 获取属性的后缀
+     * 1. 包含 "vgroupMapping"，后缀就是 "vgroupMapping"
+     * 2. 包含 "grouplist"，后缀就是 "grouplist"
+     * 3. 否则，获取最后1个 "."，它后面的就是后缀
      *
      * @param dataId
      * @return propertySuffix

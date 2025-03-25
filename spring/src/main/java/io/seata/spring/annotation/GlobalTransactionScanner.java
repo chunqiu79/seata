@@ -92,6 +92,10 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
     private MethodInterceptor globalTransactionalInterceptor;
 
     private final String applicationId;
+    /**
+     * seata客户端 启动的时候会将 值设置成 {@link io.seata.spring.boot.autoconfigure.properties.SeataProperties#txServiceGroup}
+     * 也就是 设置成 客户端配置的 seata.txServiceGroup (这个默认值是 {@link io.seata.common.DefaultValues#DEFAULT_TX_GROUP})
+     */
     private final String txServiceGroup;
     private final int mode;
     private static String accessKey;
@@ -146,6 +150,7 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
     }
 
     /**
+     * seata 客户端启动 会调用这个方法
      * Instantiates a new Global transaction scanner.
      *
      * @param applicationId      the application id
@@ -167,6 +172,7 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
     public GlobalTransactionScanner(String applicationId, String txServiceGroup, int mode,
                                     FailureHandler failureHandlerHook) {
         setOrder(ORDER_NUM);
+        // 使用 cglib 代理
         setProxyTargetClass(true);
         this.applicationId = applicationId;
         this.txServiceGroup = txServiceGroup;
@@ -224,6 +230,7 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Global Transaction Clients are initialized. ");
         }
+        // 注册 shutdown逻辑
         registerSpringShutdownHook();
 
     }
@@ -506,7 +513,9 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
             return;
         }
         if (initialized.compareAndSet(false, true)) {
-            // 初始化客户端
+            /*
+             * 初始化客户端，主要是和服务端建立了连接
+             */
             initClient();
         }
     }

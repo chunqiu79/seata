@@ -53,6 +53,11 @@ public class FileConfigFactory {
         String configType = DEFAULT_TYPE;
         int suffixIndex = fileName.lastIndexOf(".");
         if (suffixIndex > 0) {
+            /*
+             * fileName.substring(suffixIndex + 1) 就是获取后缀
+             * 1. 如果是 conf 或者 properties，那么就是 "CONF"
+             * 2. 如果是 yml，那么就是 "YAML"
+             */
             configType = SUFFIX_MAP.getOrDefault(fileName.substring(suffixIndex + 1), DEFAULT_TYPE);
         }
 

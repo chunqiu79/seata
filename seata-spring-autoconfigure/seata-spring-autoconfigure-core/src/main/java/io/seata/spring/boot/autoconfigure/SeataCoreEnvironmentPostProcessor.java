@@ -15,7 +15,6 @@
  */
 package io.seata.spring.boot.autoconfigure;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import io.seata.spring.boot.autoconfigure.properties.LogProperties;
 import io.seata.spring.boot.autoconfigure.properties.ShutdownProperties;
 import io.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties;
@@ -41,6 +40,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.seata.spring.boot.autoconfigure.StarterConstants.CONFIG_APOLLO_PREFIX;
 import static io.seata.spring.boot.autoconfigure.StarterConstants.CONFIG_CONSUL_PREFIX;
@@ -84,6 +85,10 @@ public class SeataCoreEnvironmentPostProcessor implements EnvironmentPostProcess
         return Ordered.HIGHEST_PRECEDENCE;
     }
 
+    /**
+     * 项目启动的时候，调用io.seata.server.ServerApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
+     * 会调用这个方法
+     */
     public static void init() {
         if (INIT.compareAndSet(false, true)) {
             PROPERTY_BEAN_MAP.put(CONFIG_PREFIX, ConfigProperties.class);

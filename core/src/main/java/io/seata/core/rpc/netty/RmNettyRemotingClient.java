@@ -69,11 +69,14 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
     private static final long KEEP_ALIVE_TIME = Integer.MAX_VALUE;
     private static final int MAX_QUEUE_SIZE = 20000;
     private String applicationId;
+    /**
+     * 启动的时候 设置的就是 {@link io.seata.spring.annotation.GlobalTransactionScanner.txServiceGroup}
+     */
     private String transactionServiceGroup;
 
     @Override
     public void init() {
-        // registry processor
+        // 注册 处理服务端请求的 处理器
         registerProcessor();
         if (initialized.compareAndSet(false, true)) {
             super.init();
@@ -106,7 +109,7 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
     }
 
     /**
-     * Gets instance.
+     * rm client客户端 启动的时候会调用这个方法
      *
      * @param applicationId           the application id
      * @param transactionServiceGroup the transaction service group

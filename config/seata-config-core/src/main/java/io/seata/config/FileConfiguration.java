@@ -15,6 +15,15 @@
  */
 package io.seata.config;
 
+import io.seata.common.thread.NamedThreadFactory;
+import io.seata.common.util.CollectionUtils;
+import io.seata.common.util.StringUtils;
+import io.seata.config.ConfigFuture.ConfigOperation;
+import io.seata.config.file.FileConfig;
+import org.apache.commons.lang.ObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -30,15 +39,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import io.seata.common.thread.NamedThreadFactory;
-import io.seata.common.util.CollectionUtils;
-import io.seata.common.util.StringUtils;
-import io.seata.config.ConfigFuture.ConfigOperation;
-import io.seata.config.file.FileConfig;
-import org.apache.commons.lang.ObjectUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The type FileConfiguration.
@@ -120,6 +120,7 @@ public class FileConfiguration extends AbstractConfiguration {
             }
         }
         this.name = name;
+        // 创建1个线程池
         configOperateExecutor = new ThreadPoolExecutor(CORE_CONFIG_OPERATE_THREAD, MAX_CONFIG_OPERATE_THREAD,
                 Integer.MAX_VALUE, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(),
                 new NamedThreadFactory("configOperate", MAX_CONFIG_OPERATE_THREAD));
@@ -130,17 +131,19 @@ public class FileConfiguration extends AbstractConfiguration {
             if (name == null) {
                 throw new IllegalArgumentException("name can't be null");
             }
-
+            // 是否以 "file:" 开头
             boolean filePathCustom = name.startsWith(SYS_FILE_RESOURCE_PREFIX);
+            // 去除掉 "file:"
             String filePath = filePathCustom ? name.substring(SYS_FILE_RESOURCE_PREFIX.length()) : name;
             String decodedPath = URLDecoder.decode(filePath, StandardCharsets.UTF_8.name());
-
+            // 一般都是 null
             File targetFile = getFileFromFileSystem(decodedPath);
             if (targetFile != null) {
                 return targetFile;
             }
 
             if (!filePathCustom) {
+                // 获取的配置文件
                 targetFile = getFileFromClasspath(name);
                 if (targetFile != null) {
                     return targetFile;
@@ -193,7 +196,9 @@ public class FileConfiguration extends AbstractConfiguration {
     private File getFileFromClasspath(String name) throws UnsupportedEncodingException {
         URL resource = this.getClass().getClassLoader().getResource(name);
         if (resource == null) {
+            // FileConfigFactory.getSuffixSet() 默认是 ["conf", "properties", "yml"]
             for (String s : FileConfigFactory.getSuffixSet()) {
+                // 如果 name 是 "registry" 的话，就是读取 "registry.conf"|"registry.properties"|"registry.yml" 文件
                 resource = this.getClass().getClassLoader().getResource(name + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR + s);
                 if (resource != null) {
                     String path = resource.getPath();

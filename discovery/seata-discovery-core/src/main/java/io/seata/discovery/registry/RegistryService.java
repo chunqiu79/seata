@@ -15,6 +15,9 @@
  */
 package io.seata.discovery.registry;
 
+import io.seata.config.ConfigurationCache;
+import io.seata.config.ConfigurationFactory;
+
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import io.seata.config.ConfigurationCache;
-import io.seata.config.ConfigurationFactory;
 
 /**
  * The interface Registry service.
@@ -50,6 +51,7 @@ public interface RegistryService<T> {
 
     /**
      * Service node health check
+     * 健康的 服务端信息(ip + port)
      */
     Map<String,List<InetSocketAddress>> CURRENT_ADDRESS_MAP = new ConcurrentHashMap<>();
     /**

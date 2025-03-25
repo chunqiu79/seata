@@ -58,7 +58,9 @@ public class ServerApplicationListener implements GenericApplicationListener {
         ApplicationEnvironmentPreparedEvent environmentPreparedEvent = (ApplicationEnvironmentPreparedEvent)event;
         ConfigurableEnvironment environment = environmentPreparedEvent.getEnvironment();
         ObjectHolder.INSTANCE.setObject(OBJECT_KEY_SPRING_CONFIGURABLE_ENVIRONMENT, environment);
+        // 初始化 seata核心 配置
         SeataCoreEnvironmentPostProcessor.init();
+        // 初始化 seataServer服务端 配置
         SeataServerEnvironmentPostProcessor.init();
         Configuration config  = ConfigurationFactory.getInstance();
         // Load by priority

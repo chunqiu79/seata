@@ -15,12 +15,12 @@
  */
 package io.seata.discovery.registry;
 
-import java.util.Objects;
-
 import io.seata.common.exception.NotSupportYetException;
 import io.seata.common.loader.EnhancedServiceLoader;
 import io.seata.config.ConfigurationFactory;
 import io.seata.config.ConfigurationKeys;
+
+import java.util.Objects;
 
 /**
  * The type Registry factory.
@@ -40,6 +40,7 @@ public class RegistryFactory {
 
     private static RegistryService buildRegistryService() {
         RegistryType registryType;
+        // 从 config 中获取 registry.type 对应的值
         String registryTypeName = ConfigurationFactory.CURRENT_FILE_INSTANCE.getConfig(
             ConfigurationKeys.FILE_ROOT_REGISTRY + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR
                 + ConfigurationKeys.FILE_ROOT_TYPE);

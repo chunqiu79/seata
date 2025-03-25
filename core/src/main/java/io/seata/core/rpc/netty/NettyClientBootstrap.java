@@ -101,6 +101,9 @@ public class NettyClientBootstrap implements RemotingBootstrap {
         }
     }
 
+    /**
+     * 设置 netty客户端 的一些配置
+     */
     @Override
     public void start() {
         if (this.defaultEventExecutorGroup == null) {
@@ -108,12 +111,16 @@ public class NettyClientBootstrap implements RemotingBootstrap {
                 new NamedThreadFactory(getThreadPrefix(nettyClientConfig.getClientWorkerThreadPrefix()),
                     nettyClientConfig.getClientWorkerThreads()));
         }
-        this.bootstrap.group(this.eventLoopGroupWorker).channel(
-            nettyClientConfig.getClientChannelClazz()).option(
-            ChannelOption.TCP_NODELAY, true).option(ChannelOption.SO_KEEPALIVE, true).option(
-            ChannelOption.CONNECT_TIMEOUT_MILLIS, nettyClientConfig.getConnectTimeoutMillis()).option(
-            ChannelOption.SO_SNDBUF, nettyClientConfig.getClientSocketSndBufSize()).option(ChannelOption.SO_RCVBUF,
-            nettyClientConfig.getClientSocketRcvBufSize());
+        // netty 客户端的设置（通过判断bootstrap的类型可以确定就是netty客户端）
+        // todo chunqiu79 2025/3/25 有空可以研究下这里的参数
+        this.bootstrap
+            .group(this.eventLoopGroupWorker)
+            .channel(nettyClientConfig.getClientChannelClazz())
+            .option(ChannelOption.TCP_NODELAY, true)
+            .option(ChannelOption.SO_KEEPALIVE, true)
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, nettyClientConfig.getConnectTimeoutMillis())
+            .option(ChannelOption.SO_SNDBUF, nettyClientConfig.getClientSocketSndBufSize())
+            .option(ChannelOption.SO_RCVBUF, nettyClientConfig.getClientSocketRcvBufSize());
 
         if (nettyClientConfig.enableNative()) {
             if (PlatformDependent.isOsx()) {
@@ -121,7 +128,8 @@ public class NettyClientBootstrap implements RemotingBootstrap {
                     LOGGER.info("client run on macOS");
                 }
             } else {
-                bootstrap.option(EpollChannelOption.EPOLL_MODE, EpollMode.EDGE_TRIGGERED)
+                bootstrap
+                    .option(EpollChannelOption.EPOLL_MODE, EpollMode.EDGE_TRIGGERED)
                     .option(EpollChannelOption.TCP_QUICKACK, true);
             }
         }
@@ -131,8 +139,7 @@ public class NettyClientBootstrap implements RemotingBootstrap {
                 @Override
                 public void initChannel(SocketChannel ch) {
                     ChannelPipeline pipeline = ch.pipeline();
-                    pipeline.addLast(
-                        new IdleStateHandler(nettyClientConfig.getChannelMaxReadIdleSeconds(),
+                    pipeline.addLast(new IdleStateHandler(nettyClientConfig.getChannelMaxReadIdleSeconds(),
                             nettyClientConfig.getChannelMaxWriteIdleSeconds(),
                             nettyClientConfig.getChannelMaxAllIdleSeconds()))
                         .addLast(new ProtocolV1Decoder())

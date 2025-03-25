@@ -15,8 +15,6 @@
  */
 package io.seata.config;
 
-import java.util.Objects;
-
 import io.seata.common.exception.NotSupportYetException;
 import io.seata.common.loader.EnhancedServiceLoader;
 import io.seata.common.loader.EnhancedServiceNotFoundException;
@@ -24,11 +22,10 @@ import io.seata.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 /**
- * The type Configuration factory.
- *
- * @author slievrly
- * @author Geng Zhang
+ * 配置工厂，静态调用load()
  */
 public final class ConfigurationFactory {
 
@@ -42,24 +39,37 @@ public final class ConfigurationFactory {
 
     private static final String ENV_SEATA_CONFIG_NAME = "SEATA_CONFIG_NAME";
 
+    /**
+     * 当前配置
+     */
     public static Configuration CURRENT_FILE_INSTANCE;
 
     static {
+        // 静态调用
         load();
     }
 
     private static void load() {
+        // 获取配置中 seata.config.name 的值
         String seataConfigName = System.getProperty(SYSTEM_PROPERTY_SEATA_CONFIG_NAME);
         if (seataConfigName == null) {
+            // 获取配置中的 SEATA_CONFIG_NAME 的值
             seataConfigName = System.getenv(ENV_SEATA_CONFIG_NAME);
         }
         if (seataConfigName == null) {
+            // 设置为 "registry"（兜底的）
             seataConfigName = REGISTRY_CONF_DEFAULT;
         }
+        // 获取配置中 seataEnv 的值
         String envValue = System.getProperty(ENV_PROPERTY_KEY);
         if (envValue == null) {
+            // 获取配置中 SEATA_ENV 的值
             envValue = System.getenv(ENV_SYSTEM_KEY);
         }
+        /*
+         * 1. 没有配置 seataEnv 的话，name = (seataConfigName)，不允许动态刷新配置
+         * 2. 配置了 seataEnv 的话，name = (seataConfigName + "-" + seataEnv的值)，不允许动态刷新配置
+         */
         Configuration configuration = (envValue == null) ? new FileConfiguration(seataConfigName,
                 false) : new FileConfiguration(seataConfigName + "-" + envValue, false);
         Configuration extConfiguration = null;

@@ -99,31 +99,35 @@ public abstract class AbstractNettyRemoting implements Disposable {
     /**
      * This container holds all processors.
      * processor type {@link MessageType}
+     * 客户端 处理 服务端 所有请求的处理器的 缓存map
      */
     protected final HashMap<Integer/*MessageType*/, Pair<RemotingProcessor, ExecutorService>> processorTable = new HashMap<>(32);
 
     protected final List<RpcHook> rpcHooks = EnhancedServiceLoader.loadAll(RpcHook.class);
 
     public void init() {
-        // 3秒之后执行，每次执行间隔3秒
-        timerExecutor.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<Integer, MessageFuture> entry : futures.entrySet()) {
-                    MessageFuture future = entry.getValue();
-                    if (future.isTimeout()) {
-                        futures.remove(entry.getKey());
-                        RpcMessage rpcMessage = future.getRequestMessage();
-                        future.setResultMessage(new TimeoutException(String
-                            .format("msgId: %s ,msgType: %s ,msg: %s ,request timeout", rpcMessage.getId(), String.valueOf(rpcMessage.getMessageType()), rpcMessage.getBody().toString())));
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("timeout clear future: {}", entry.getValue().getRequestMessage().getBody());
-                        }
+        /*
+         * 主要是为了删除 futures 中超时的 future
+         * 间隔3秒执行1次
+         */
+        timerExecutor.scheduleAtFixedRate(() -> {
+            /**
+             * 这个 futures 只有 调用${@link AbstractNettyRemoting#sendSync(Channel, RpcMessage, long) put元素，刚开始就是空的}
+             */
+            for (Map.Entry<Integer, MessageFuture> entry : futures.entrySet()) {
+                MessageFuture future = entry.getValue();
+                if (future.isTimeout()) {
+                    futures.remove(entry.getKey());
+                    RpcMessage rpcMessage = future.getRequestMessage();
+                    future.setResultMessage(new TimeoutException(String
+                        .format("msgId: %s ,msgType: %s ,msg: %s ,request timeout", rpcMessage.getId(), String.valueOf(rpcMessage.getMessageType()), rpcMessage.getBody().toString())));
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("timeout clear future: {}", entry.getValue().getRequestMessage().getBody());
                     }
                 }
-
-                nowMills = System.currentTimeMillis();
             }
+
+            nowMills = System.currentTimeMillis();
         }, TIMEOUT_CHECK_INTERVAL, TIMEOUT_CHECK_INTERVAL, TimeUnit.MILLISECONDS);
     }
 

@@ -62,6 +62,9 @@ public final class TmNettyRemotingClient extends AbstractNettyRemotingClient {
     private static final int MAX_QUEUE_SIZE = 2000;
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private String applicationId;
+    /**
+     * 启动的时候 设置的就是 {@link io.seata.spring.annotation.GlobalTransactionScanner.txServiceGroup}
+     */
     private String transactionServiceGroup;
     private final AuthSigner signer;
     private String accessKey;
@@ -100,6 +103,7 @@ public final class TmNettyRemotingClient extends AbstractNettyRemotingClient {
     }
 
     /**
+     * tm client客户端 初始化的时候会调用这个方法
      * Gets instance.
      *
      * @param applicationId           the application id
@@ -191,7 +195,9 @@ public final class TmNettyRemotingClient extends AbstractNettyRemotingClient {
         registerProcessor();
         if (initialized.compareAndSet(false, true)) {
             super.init();
-            // 配置了 seata.tx-service-group
+            /**
+             * 本身就有个兜底的 ${@link DefaultValues#DEFAULT_TX_GROUP}
+             */
             if (io.seata.common.util.StringUtils.isNotBlank(transactionServiceGroup)) {
                 getClientChannelManager().reconnect(transactionServiceGroup);
             }
@@ -251,7 +257,7 @@ public final class TmNettyRemotingClient extends AbstractNettyRemotingClient {
 
     private void registerProcessor() {
         // 1.registry TC response processor
-        // 注册 tc响应处理器
+        // 注册 tc 响应处理器
         ClientOnResponseProcessor onResponseProcessor =
                 new ClientOnResponseProcessor(mergeMsgMap, super.getFutures(), getTransactionMessageHandler());
         super.registerProcessor(MessageType.TYPE_SEATA_MERGE_RESULT, onResponseProcessor, null);
@@ -264,6 +270,7 @@ public final class TmNettyRemotingClient extends AbstractNettyRemotingClient {
         super.registerProcessor(MessageType.TYPE_BATCH_RESULT_MSG, onResponseProcessor, null);
         // 2.registry heartbeat message processor
         ClientHeartbeatProcessor clientHeartbeatProcessor = new ClientHeartbeatProcessor();
+        // 处理服务端心跳
         super.registerProcessor(MessageType.TYPE_HEARTBEAT_MSG, clientHeartbeatProcessor, null);
     }
 

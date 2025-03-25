@@ -15,22 +15,6 @@
  */
 package io.seata.core.rpc.netty;
 
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import io.seata.core.protocol.RegisterTMRequest;
-import org.apache.commons.pool.impl.GenericKeyedObjectPool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.channel.Channel;
 import io.seata.common.exception.FrameworkErrorCode;
 import io.seata.common.exception.FrameworkException;
@@ -39,9 +23,24 @@ import io.seata.common.util.NetUtil;
 import io.seata.common.util.StringUtils;
 import io.seata.core.constants.ConfigurationKeys;
 import io.seata.core.protocol.RegisterRMRequest;
+import io.seata.core.protocol.RegisterTMRequest;
 import io.seata.discovery.registry.FileRegistryServiceImpl;
 import io.seata.discovery.registry.RegistryFactory;
 import io.seata.discovery.registry.RegistryService;
+import org.apache.commons.pool.impl.GenericKeyedObjectPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Netty client pool manager.
@@ -168,6 +167,7 @@ class NettyClientChannelManager {
     void reconnect(String transactionServiceGroup) {
         List<String> availList = null;
         try {
+            // 获取可用的服务端(ip + ":" + port)
             availList = getAvailServerList(transactionServiceGroup);
         } catch (Exception e) {
             LOGGER.error("Failed to get available servers: {}", e.getMessage(), e);
@@ -253,6 +253,7 @@ class NettyClientChannelManager {
     }
 
     private List<String> getAvailServerList(String transactionServiceGroup) throws Exception {
+        // RegistryFactory.getInstance() 注册中心，一般都是
         List<InetSocketAddress> availInetSocketAddressList = RegistryFactory.getInstance()
                 .lookup(transactionServiceGroup);
         if (CollectionUtils.isEmpty(availInetSocketAddressList)) {
