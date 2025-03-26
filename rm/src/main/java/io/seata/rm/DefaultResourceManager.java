@@ -89,6 +89,9 @@ public class DefaultResourceManager implements ResourceManager {
         return getResourceManager(branchType).branchRollback(branchType, xid, branchId, resourceId, applicationData);
     }
 
+    /**
+     * 注册 分支事务
+     */
     @Override
     public Long branchRegister(BranchType branchType, String resourceId,
                                String clientId, String xid, String applicationData, String lockKeys)
@@ -96,6 +99,7 @@ public class DefaultResourceManager implements ResourceManager {
         /*
          * 按branchType分类
          * at: 实现类是 DataSourceManager --> AbstractResourceManager
+         * tcc: 实现类是 TCCResourceManager --> AbstractResourceManager
          */
         return getResourceManager(branchType).branchRegister(branchType, resourceId, clientId, xid, applicationData,
             lockKeys);

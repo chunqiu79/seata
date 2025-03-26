@@ -629,6 +629,7 @@ public interface ConfigurationKeys {
 
     /**
      * The constant DISABLE_GLOBAL_TRANSACTION.
+     * 禁用全局事务
      */
     String DISABLE_GLOBAL_TRANSACTION = SERVICE_PREFIX + "disableGlobalTransaction";
 

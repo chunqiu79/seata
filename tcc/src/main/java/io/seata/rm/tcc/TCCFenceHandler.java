@@ -15,15 +15,6 @@
  */
 package io.seata.rm.tcc;
 
-import java.lang.reflect.Method;
-import java.sql.Connection;
-import java.util.Date;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import javax.sql.DataSource;
-
 import io.seata.common.exception.FrameworkErrorCode;
 import io.seata.common.exception.SkipCallbackWrapperException;
 import io.seata.common.executor.Callback;
@@ -38,6 +29,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import javax.sql.DataSource;
+import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * TCC Fence Handler(idempotent, non_rollback, suspend)
@@ -97,6 +97,7 @@ public class TCCFenceHandler {
         return transactionTemplate.execute(status -> {
             try {
                 Connection conn = DataSourceUtils.getConnection(dataSource);
+                // 插入 防悬挂 表中
                 boolean result = insertTCCFenceLog(conn, xid, branchId, actionName, TCCFenceConstant.STATUS_TRIED);
                 LOGGER.info("TCC fence prepare result: {}. xid: {}, branchId: {}", result, xid, branchId);
                 if (result) {

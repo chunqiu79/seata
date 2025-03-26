@@ -48,13 +48,8 @@ import java.util.function.Function;
 import static io.seata.core.constants.ConfigurationKeys.*;
 
 /**
- * The rm netty client.
- *
- * @author slievrly
- * @author zhaojun
- * @author zhangchenghui.dev@gmail.com
+ * tm netty客户端
  */
-
 public final class TmNettyRemotingClient extends AbstractNettyRemotingClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(TmNettyRemotingClient.class);
     private static volatile TmNettyRemotingClient instance;

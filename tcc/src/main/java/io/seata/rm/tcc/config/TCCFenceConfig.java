@@ -15,14 +15,6 @@
  */
 package io.seata.rm.tcc.config;
 
-import java.time.Duration;
-import java.util.Date;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.sql.DataSource;
-
 import io.seata.common.DefaultValues;
 import io.seata.common.exception.FrameworkErrorCode;
 import io.seata.common.thread.NamedThreadFactory;
@@ -36,6 +28,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import javax.sql.DataSource;
+import java.time.Duration;
+import java.util.Date;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * TCC Fence Config
@@ -60,6 +59,8 @@ public class TCCFenceConfig implements InitializingBean, Disposable {
 
     /**
      * TCC fence log table name
+     * 默认是 tcc_fence_log
+     * 配置 ${@link io.seata.spring.boot.autoconfigure.StarterConstants#TCC_FENCE_PREFIX}.logTableName 可以修改表名
      */
     private String logTableName = DefaultValues.DEFAULT_TCC_FENCE_LOG_TABLE_NAME;
 

@@ -103,9 +103,7 @@ public class TCCBeanParserUtils {
 
     /**
      * is TCC proxy-bean/target-bean: LocalTCC , the proxy bean of sofa:reference/dubbo:reference
-     *
-     * @param remotingDesc the remoting desc
-     * @return boolean boolean
+     * 目前简单理解就是看当前 bean对应的接口的方法上面有没有 ${@link TwoPhaseBusinessAction} 注解
      */
     public static boolean isTccProxyTargetBean(RemotingDesc remotingDesc) {
         if (remotingDesc == null) {
@@ -126,6 +124,7 @@ public class TCCBeanParserUtils {
         if (!isTccClazz) {
             return false;
         }
+        // todo chunqiu79 2025/3/26 这里的协议是啥意思，目前没懂
         short protocols = remotingDesc.getProtocol();
         //LocalTCC
         if (Protocols.IN_JVM == protocols) {

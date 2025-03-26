@@ -57,7 +57,7 @@ public class SpringBootConfigurationProvider implements ExtConfigurationProvider
 
     @Override
     public Configuration provide(Configuration originalConfiguration) {
-        // originalConfiguration 其实就是 文件配置
+        // originalConfiguration 其实就是 FileConfiguration文件配置
         return (Configuration)Enhancer.create(originalConfiguration.getClass(),
             (MethodInterceptor)(proxy, method, args, methodProxy) -> {
                 /*
@@ -211,9 +211,6 @@ public class SpringBootConfigurationProvider implements ExtConfigurationProvider
      * 1. 包含 "vgroupMapping"，后缀就是 "vgroupMapping"
      * 2. 包含 "grouplist"，后缀就是 "grouplist"
      * 3. 否则，获取最后1个 "."，它后面的就是后缀
-     *
-     * @param dataId
-     * @return propertySuffix
      */
     private String getPropertySuffix(String dataId) {
         if (dataId.contains(SPECIAL_KEY_VGROUP_MAPPING)) {

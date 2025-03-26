@@ -282,6 +282,7 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
                     // init tcc fence clean task if enable useTccFence
                     TCCBeanParserUtils.initTccFenceCleanTask(TCCBeanParserUtils.getRemotingDesc(beanName), applicationContext);
                     //TCC interceptor, proxy bean of sofa:reference/dubbo:reference, and LocalTCC
+                    // 如果需要符合 tcc，那么需要设置 TccActionInterceptor 拦截器
                     interceptor = new TccActionInterceptor(TCCBeanParserUtils.getRemotingDesc(beanName));
                     ConfigurationCache.addConfigListener(ConfigurationKeys.DISABLE_GLOBAL_TRANSACTION,
                             (ConfigurationChangeListener)interceptor);

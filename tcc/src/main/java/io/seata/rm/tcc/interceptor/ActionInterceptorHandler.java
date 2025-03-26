@@ -15,14 +15,6 @@
  */
 package io.seata.rm.tcc.interceptor;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.lang.reflect.UndeclaredThrowableException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import javax.annotation.Nonnull;
-
 import com.alibaba.fastjson.JSON;
 import io.seata.common.Constants;
 import io.seata.common.exception.FrameworkException;
@@ -42,6 +34,14 @@ import io.seata.rm.tcc.api.TwoPhaseBusinessAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+
+import javax.annotation.Nonnull;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Handler the TCC Participant Aspect : Setting Context, Creating Branch Record
@@ -75,7 +75,7 @@ public class ActionInterceptorHandler {
         //Set the delay report
         actionContext.setDelayReport(businessAction.isDelayReport());
 
-        //Creating Branch Record
+        // 内部会注册 分支事务（所以try的时候就注册）
         String branchId = doTccActionLogStore(method, arguments, businessAction, actionContext);
         actionContext.setBranchId(branchId);
         //MDC put branchId
@@ -173,7 +173,7 @@ public class ActionInterceptorHandler {
         Map<String, Object> context = fetchActionRequestContext(method, arguments);
         context.put(Constants.ACTION_START_TIME, System.currentTimeMillis());
 
-        //Init business context
+        // 对上下文进行设置
         initBusinessContext(context, method, businessAction);
         //Init running environment context
         initFrameworkContext(context);
@@ -232,8 +232,9 @@ public class ActionInterceptorHandler {
             context.put(Constants.PREPARE_METHOD, method.getName());
         }
         if (businessAction != null) {
-            //the phase two method name
+            // 设置 commit 方法
             context.put(Constants.COMMIT_METHOD, businessAction.commitMethod());
+            // 设置 rollback 方法
             context.put(Constants.ROLLBACK_METHOD, businessAction.rollbackMethod());
             context.put(Constants.ACTION_NAME, businessAction.name());
             context.put(Constants.USE_TCC_FENCE, businessAction.useTCCFence());

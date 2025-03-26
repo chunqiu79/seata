@@ -109,6 +109,7 @@ public final class ConfigurationFactory {
     }
 
     private static Configuration buildConfiguration() {
+        // 从 Configuration 中读取 config.type 的值
         String configTypeName = CURRENT_FILE_INSTANCE.getConfig(
                 ConfigurationKeys.FILE_ROOT_CONFIG + ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR
                         + ConfigurationKeys.FILE_ROOT_TYPE);
@@ -120,9 +121,11 @@ public final class ConfigurationFactory {
 
         Configuration extConfiguration = null;
         Configuration configuration;
+        // 文件
         if (ConfigType.File == configType) {
             String pathDataId = String.join(ConfigurationKeys.FILE_CONFIG_SPLIT_CHAR,
                     ConfigurationKeys.FILE_ROOT_CONFIG, FILE_TYPE, NAME_KEY);
+            // 从 Configuration 中读取 config.file.name 的值
             String name = CURRENT_FILE_INSTANCE.getConfig(pathDataId);
             configuration = new FileConfiguration(name);
             try {

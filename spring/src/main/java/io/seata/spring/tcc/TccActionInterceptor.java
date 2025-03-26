@@ -15,9 +15,6 @@
  */
 package io.seata.spring.tcc;
 
-import java.lang.reflect.Method;
-import javax.annotation.Nullable;
-
 import io.seata.common.DefaultValues;
 import io.seata.config.ConfigurationChangeEvent;
 import io.seata.config.ConfigurationChangeListener;
@@ -37,6 +34,9 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 
+import javax.annotation.Nullable;
+import java.lang.reflect.Method;
+
 import static io.seata.common.DefaultValues.DEFAULT_DISABLE_GLOBAL_TRANSACTION;
 import static io.seata.core.constants.ConfigurationKeys.TCC_ACTION_INTERCEPTOR_ORDER;
 
@@ -54,6 +54,9 @@ public class TccActionInterceptor implements MethodInterceptor, ConfigurationCha
 
     private ActionInterceptorHandler actionInterceptorHandler = new ActionInterceptorHandler();
 
+    /**
+     * 禁用全局事务
+     */
     private volatile boolean disable = ConfigurationFactory.getInstance().getBoolean(
         ConfigurationKeys.DISABLE_GLOBAL_TRANSACTION, DEFAULT_DISABLE_GLOBAL_TRANSACTION);
 
@@ -79,13 +82,16 @@ public class TccActionInterceptor implements MethodInterceptor, ConfigurationCha
 
     @Override
     public Object invoke(final MethodInvocation invocation) throws Throwable {
+        // 当前不属于事务中 || 禁用 || saga
         if (!RootContext.inGlobalTransaction() || disable || RootContext.inSagaBranch()) {
             //not in transaction, or this interceptor is disabled
             return invocation.proceed();
         }
         Method method = getActionInterfaceMethod(invocation);
         TwoPhaseBusinessAction businessAction = method.getAnnotation(TwoPhaseBusinessAction.class);
-        //try method
+        /**
+         * 只有try方法上面有这个 ${@link TwoPhaseBusinessAction} 注解
+         */
         if (businessAction != null) {
             //save the xid
             String xid = RootContext.getXID();
