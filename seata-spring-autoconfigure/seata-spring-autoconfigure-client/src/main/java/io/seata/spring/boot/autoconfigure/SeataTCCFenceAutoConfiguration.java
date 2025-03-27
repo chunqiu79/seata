@@ -31,9 +31,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 
 /**
- * TCC fence auto configuration.
- *
- * @author kaka2code
+ * tcc 防悬挂自动配置类
  */
 @ConditionalOnExpression("${seata.enabled:true}")
 @ConditionalOnBean(type = {"javax.sql.DataSource", "org.springframework.transaction.PlatformTransactionManager"})

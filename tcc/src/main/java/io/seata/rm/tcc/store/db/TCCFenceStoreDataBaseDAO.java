@@ -41,7 +41,7 @@ import java.util.Date;
 public class TCCFenceStoreDataBaseDAO implements TCCFenceStore {
 
     /**
-     * TCC fence log table name
+     * tcc 防悬挂表名
      */
     private String logTableName = DefaultValues.DEFAULT_TCC_FENCE_LOG_TABLE_NAME;
 

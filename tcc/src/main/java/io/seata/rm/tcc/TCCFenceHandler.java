@@ -97,7 +97,7 @@ public class TCCFenceHandler {
         return transactionTemplate.execute(status -> {
             try {
                 Connection conn = DataSourceUtils.getConnection(dataSource);
-                // 插入 防悬挂 表中
+                // 在 tcc防悬挂表 中插入 1条记录
                 boolean result = insertTCCFenceLog(conn, xid, branchId, actionName, TCCFenceConstant.STATUS_TRIED);
                 LOGGER.info("TCC fence prepare result: {}. xid: {}, branchId: {}", result, xid, branchId);
                 if (result) {

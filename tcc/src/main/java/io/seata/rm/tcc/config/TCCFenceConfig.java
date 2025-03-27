@@ -37,9 +37,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * TCC Fence Config
- *
- * @author kaka2code
+ * tcc 防悬挂配置
+ * 前缀 ${@link io.seata.spring.boot.autoconfigure.StarterConstants#TCC_FENCE_PREFIX} 其实就是 seata.tcc.fence
  */
 public class TCCFenceConfig implements InitializingBean, Disposable {
 
@@ -138,6 +137,9 @@ public class TCCFenceConfig implements InitializingBean, Disposable {
         tccFenceClean.shutdown();
     }
 
+    /**
+     * 初始化
+     */
     @Override
     public void afterPropertiesSet() {
         // set log table name

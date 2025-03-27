@@ -86,7 +86,7 @@ public class ActionInterceptorHandler {
         try {
             //share actionContext implicitly
             BusinessActionContextUtil.setContext(actionContext);
-
+            // 需要使用 防悬挂
             if (businessAction.useTCCFence()) {
                 try {
                     // Use TCC Fence, and return the business result
